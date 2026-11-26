@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "A verified public arcade run score submitted by an authenticated player for Leonida Run.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Authenticated user UID owning this score record.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Public arcade handle displayed on the leaderboard (no PII).",
+          "minLength": 2,
+          "maxLength": 20,
+          "pattern": "^[a-zA-Z0-9 _\\-]+$"
+        },
+        "haul": {
+          "type": "integer",
+          "description": "Final run cash haul in dollars."
+        },
+        "distanceMeters": {
+          "type": "integer",
+          "description": "Total distance driven in meters."
+        },
+        "copsWrecked": {
+          "type": "integer",
+          "description": "Number of police vehicles wrecked during the run."
+        },
+        "nearMisses": {
+          "type": "integer",
+          "description": "Total high-speed near misses."
+        },
+        "maxCombo": {
+          "type": "integer",
+          "description": "Highest combo multiplier achieved (1-15)."
+        },
+        "peakStars": {
+          "type": "integer",
+          "description": "Peak wanted star level reached (1-5)."
+        },
+        "carId": {
+          "type": "string",
+          "description": "Vehicle identifier used for the run.",
+          "enum": ["cheetah", "banshee", "comet"],
+          "maxLength": 20
+        },
+        "mode": {
+          "type": "string",
+          "description": "Game mode played.",
+          "enum": ["GETAWAY", "DAILY", "ENDLESS"],
+          "maxLength": 20
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Deterministic 6-digit run seed."
+        },
+        "titleEarned": {
+          "type": "string",
+          "description": "Criminal rank title earned at the end of the run.",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "isVictory": {
+          "type": "boolean",
+          "description": "Whether the player reached the safehouse escape."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the score was submitted."
+        }
+      },
+      "required": [
+        "uid",
+        "driverName",
+        "haul",
+        "distanceMeters",
+        "copsWrecked",
+        "nearMisses",
+        "maxCombo",
+        "peakStars",
+        "carId",
+        "mode",
+        "seed",
+        "titleEarned",
+        "isVictory",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/leaderboard_entries/{entryId}": {
+      "schema": {
+        "$ref": "#/entities/LeaderboardEntry"
+      },
+      "description": "Publicly readable leaderboard entries owned by authenticated players with no PII stored."
+    }
+  }
+}

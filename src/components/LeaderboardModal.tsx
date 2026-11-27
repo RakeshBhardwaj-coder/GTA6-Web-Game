@@ -33,7 +33,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   const handleShare = async () => {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const shareText = kingpin
-      ? `Check out the Global Leaderboard on GTA6 Web Game! #1 Winner ${kingpin.driverName} scored $${kingpin.haul.toLocaleString()} (${(kingpin.distanceMeters / 1000).toFixed(2)} km)!`
+      ? `Check out the Global Leaderboard on GTA6 Web Game! #1 Winner ${kingpin.driverName} scored $${kingpin.haul.toLocaleString()} (${kingpin.distanceMeters.toLocaleString()}m)!`
       : 'Race on the Global Leaderboard in GTA6 Web Game by Rakesh Bhardwaj!';
     if (navigator.share) {
       try {
@@ -135,7 +135,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                     </span>
                     <span className="text-slate-500" aria-hidden="true">·</span>
                     <span className="font-mono-num text-sm sm:text-base font-bold text-[#38BDF8] tabular-nums">
-                      {(kingpin.distanceMeters / 1000).toFixed(2)} km
+                      {kingpin.distanceMeters.toLocaleString()}m
                     </span>
                   </div>
 
@@ -203,7 +203,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                               </span>
                               <span className="text-slate-500" aria-hidden="true">·</span>
                               <span className="text-[#38BDF8]">
-                                {(entry.distanceMeters / 1000).toFixed(2)} km
+                                {entry.distanceMeters.toLocaleString()}m
                               </span>
                             </div>
                           </div>

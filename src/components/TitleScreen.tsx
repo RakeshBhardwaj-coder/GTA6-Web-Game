@@ -27,7 +27,6 @@ const KEY_ART_URL = './src/assets/images/leonida_title_keyart_1795516402210.jpg'
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   selectedCar,
   onSelectCar,
-  bestScore,
   challenge,
   onClearChallenge,
   onStart,
@@ -82,13 +81,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           <div className="w-full my-auto flex flex-col items-center space-y-5">
           {/* Bespoke Centered SVG Title Lockup */}
           <div className="w-full flex flex-col items-center">
-            <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide mb-2">
-              <span className="text-[#FFB347]">A Game by Rakesh Bhardwaj</span>
-              <span className="px-2.5 py-0.5 rounded bg-[#10B981]/20 border border-[#10B981]/45 text-[#34D399] font-bold tabular-nums">
-                Best ${bestScore.toLocaleString()}
-              </span>
-            </div>
-
             <svg
               viewBox="0 0 540 112"
               className="w-full max-w-[430px] h-auto mx-auto drop-shadow-[0_6px_24px_rgba(0,0,0,0.7)]"
@@ -284,6 +276,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <span>Mobile: Buttons / Swipe</span>
           </div>
 
+          <p className="text-xs font-semibold text-[#FFB347] tracking-wide">
+            A Game by Rakesh Bhardwaj
+          </p>
           <p className="text-[11px] font-medium text-slate-400 tracking-wide">
             © 2026 Rakesh Bhardwaj · All Rights Reserved
           </p>

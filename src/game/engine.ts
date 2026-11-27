@@ -1030,9 +1030,9 @@ export function stepEngine(
 
   const distNow = Math.round(p.worldY / PX_PER_METER);
   if (distNow >= 2500) {
-    triggerPraiseOnce(world, 'dist2500', 'Wow! 2.5 km Master Escape!', 'wow');
+    triggerPraiseOnce(world, 'dist2500', 'Wow! 2,500m Master Escape!', 'wow');
   } else if (distNow >= 1000) {
-    triggerPraiseOnce(world, 'dist1000', 'Great Pace! 1 km Driven!', 'great');
+    triggerPraiseOnce(world, 'dist1000', 'Great Pace! 1,000m Driven!', 'great');
   }
 
   const healthRatio = p.health / Math.max(1, p.maxHealth);

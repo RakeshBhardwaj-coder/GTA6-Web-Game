@@ -13,15 +13,15 @@ import {
 import { ControlMode, HudSnapshot, PraiseStyle } from '../game/types';
 
 const PRAISE_STYLE_CLASSES: Record<PraiseStyle, string> = {
-  wow: 'bg-[#FFB347]/18 border-[#FFB347]/55 text-[#FFB347] font-display italic font-extrabold text-lg sm:text-xl tracking-wider shadow-[0_0_20px_rgba(255,179,71,0.22)]',
+  wow: 'bg-[#0B0D14]/70 border-[#FFB347]/60 text-[#FFB347] font-display italic font-extrabold text-sm sm:text-lg tracking-wider shadow-[0_0_18px_rgba(255,179,71,0.22)]',
   awesome:
-    'bg-[#FF5E7E]/18 border-[#FF5E7E]/55 text-[#FF5E7E] font-display font-extrabold text-lg sm:text-xl tracking-wide uppercase shadow-[0_0_20px_rgba(255,94,126,0.22)]',
+    'bg-[#0B0D14]/70 border-[#FF5E7E]/60 text-[#FF5E7E] font-display font-extrabold text-sm sm:text-lg tracking-wide uppercase shadow-[0_0_18px_rgba(255,94,126,0.22)]',
   great:
-    'bg-[#2DD4BF]/18 border-[#2DD4BF]/50 text-[#2DD4BF] font-display font-bold text-base sm:text-lg tracking-wide shadow-[0_0_18px_rgba(45,212,191,0.18)]',
+    'bg-[#0B0D14]/70 border-[#2DD4BF]/55 text-[#2DD4BF] font-display font-bold text-sm sm:text-base tracking-wide shadow-[0_0_16px_rgba(45,212,191,0.18)]',
   clutch:
-    'bg-[#10B981]/22 border-[#34D399]/60 text-[#34D399] font-display italic font-extrabold text-base sm:text-lg tracking-wide shadow-[0_0_22px_rgba(52,211,153,0.25)]',
+    'bg-[#0B0D14]/70 border-[#34D399]/60 text-[#34D399] font-display italic font-extrabold text-sm sm:text-base tracking-wide shadow-[0_0_18px_rgba(52,211,153,0.22)]',
   warm:
-    'bg-[#F59E0B]/16 border-[#FDE68A]/45 text-[#FDE68A] font-sans font-bold text-sm sm:text-base tracking-normal shadow-[0_0_16px_rgba(253,230,138,0.16)]',
+    'bg-[#0B0D14]/70 border-[#FDE68A]/50 text-[#FDE68A] font-sans font-bold text-xs sm:text-sm tracking-normal shadow-[0_0_14px_rgba(253,230,138,0.16)]',
 };
 
 const DriftCarIcon: React.FC<{ className?: string }> = ({ className = 'w-6 h-6' }) => (
@@ -95,7 +95,7 @@ export const GameHud: React.FC<GameHudProps> = ({
   onTouchInput,
 }) => {
   const healthPct = Math.max(0, Math.min(100, Math.round((hud.health / hud.maxHealth) * 100)));
-  const distKm = (hud.distanceMeters / 1000).toFixed(2);
+  const distMetersText = `${Math.max(0, Math.round(hud.distanceMeters)).toLocaleString()} m`;
   const showStartHint = hud.elapsedSec < 4.5;
 
   return (
@@ -126,7 +126,7 @@ export const GameHud: React.FC<GameHudProps> = ({
             )}
 
             <div className="mt-1 flex items-center justify-center text-[11px] sm:text-xs text-slate-200 font-mono-num">
-              <span>{distKm} km</span>
+              <span>{distMetersText}</span>
             </div>
 
             {hud.targetScore !== null && (
@@ -269,28 +269,36 @@ export const GameHud: React.FC<GameHudProps> = ({
             </div>
           </div>
         )}
-      </div>
 
-      {/* Center-Top: Start Movement Suggestion or One-Time Performance Praise */}
-      <div className="flex flex-col items-center justify-center pointer-events-none">
-        {showStartHint ? (
-          <div className="mx-auto px-4 py-1.5 rounded-lg bg-[#0B0D14]/55 backdrop-blur-[2px] border border-white/12 text-xs sm:text-sm font-medium text-slate-100 text-center">
-            {isTouchDevice
-              ? controlMode === 'SWIPE'
-                ? 'Drag ◀ ▶ Steer · Tap Boost & Drift'
-                : 'Tap ◀ ▶ Steer · Tap Boost & Drift'
-              : '◀ ▶ / A D Steer · ▲ Boost · ⎵ Space Drift · ⇧ Shift Nitro'}
-          </div>
-        ) : hud.praiseMessage ? (
+        {/* Top-Center: Start Movement Hint or Performance Gratitude/Praise Banner (Always at Top in Mobile & Desktop) */}
+        {(showStartHint || hud.praiseMessage) && (
           <div
-            key={`${hud.praiseStyle}-${hud.praiseMessage}`}
-            className={`mx-auto px-4 py-1.5 rounded-lg border animate-praise-pop ${
-              PRAISE_STYLE_CLASSES[hud.praiseStyle] ?? PRAISE_STYLE_CLASSES.great
+            className={`pointer-events-none flex justify-center w-full ${
+              isTouchDevice
+                ? 'lg:fixed lg:top-5 lg:left-1/2 lg:-translate-x-1/2 lg:w-auto lg:max-w-[calc(100%-540px)]'
+                : 'md:fixed md:top-5 md:left-1/2 md:-translate-x-1/2 md:w-auto md:max-w-[calc(100%-430px)]'
             }`}
           >
-            <span className="inline-block animate-text-bounce">{hud.praiseMessage}</span>
+            {showStartHint ? (
+              <div className="mx-auto px-3.5 py-1 rounded-lg bg-[#0B0D14]/65 backdrop-blur-[3px] border border-white/15 text-[11px] sm:text-xs font-medium text-slate-100 text-center">
+                {isTouchDevice
+                  ? controlMode === 'SWIPE'
+                    ? 'Drag ◀ ▶ Steer · Tap Boost & Drift'
+                    : 'Tap ◀ ▶ Steer · Tap Boost & Drift'
+                  : '◀ ▶ / A D Steer · ▲ Boost · ⎵ Space Drift · ⇧ Shift Nitro'}
+              </div>
+            ) : hud.praiseMessage ? (
+              <div
+                key={`${hud.praiseStyle}-${hud.praiseMessage}`}
+                className={`mx-auto px-3.5 py-1 rounded-lg border backdrop-blur-[3px] animate-praise-pop ${
+                  PRAISE_STYLE_CLASSES[hud.praiseStyle] ?? PRAISE_STYLE_CLASSES.great
+                }`}
+              >
+                <span className="inline-block animate-text-bounce">{hud.praiseMessage}</span>
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* Bottom Area */}

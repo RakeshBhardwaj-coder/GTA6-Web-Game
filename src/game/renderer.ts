@@ -1283,29 +1283,9 @@ function drawCopVehicle(
   sy: number,
   scale: number,
   time: number,
-  toScreenX: (wy: number, lx: number) => number,
-  toScreenY: (wy: number) => number
+  _toScreenX: (wy: number, lx: number) => number,
+  _toScreenY: (wy: number) => number
 ): void {
-  // Tank target lock laser line to impact spot
-  if (
-    c.kind === 'army_tank' &&
-    !c.wrecked &&
-    c.lockLaneX !== null &&
-    c.lockWorldY !== null
-  ) {
-    const tx = toScreenX(c.lockWorldY, c.lockLaneX);
-    const ty = toScreenY(c.lockWorldY);
-    ctx.save();
-    ctx.setLineDash([7, 7]);
-    ctx.strokeStyle = 'rgba(249, 115, 22, 0.55)';
-    ctx.lineWidth = Math.max(1.5, 2 * scale);
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(tx, ty);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   ctx.save();
   ctx.translate(sx, sy);
   ctx.scale(scale, scale);
@@ -1319,66 +1299,6 @@ function drawCopVehicle(
   ctx.fillStyle = 'rgba(0,0,0,0.42)';
   roundRect(ctx, -hw + 4, -hl + 5, c.width, c.length, 7);
   ctx.fill();
-
-  if (c.kind === 'army_tank') {
-    // Caterpillar Tracks
-    ctx.fillStyle = '#0F172A';
-    roundRect(ctx, -hw - 2, -hl + 4, 10, c.length - 8, 3);
-    ctx.fill();
-    roundRect(ctx, hw - 8, -hl + 4, 10, c.length - 8, 3);
-    ctx.fill();
-
-    // Track tread notches
-    ctx.fillStyle = '#334155';
-    for (let ty = -hl + 8; ty < hl - 8; ty += 10) {
-      ctx.fillRect(-hw - 1, ty, 8, 3);
-      ctx.fillRect(hw - 7, ty, 8, 3);
-    }
-
-    // Armored Hull
-    ctx.fillStyle = c.hitFlash > 0 ? '#FFFFFF' : '#364432';
-    roundRect(ctx, -hw + 5, -hl, c.width - 10, c.length, 6);
-    ctx.fill();
-
-    ctx.fillStyle = c.hitFlash > 0 ? '#E2E8F0' : '#4D5E43';
-    roundRect(ctx, -hw + 9, -hl + 8, c.width - 18, c.length - 16, 4);
-    ctx.fill();
-
-    // Rotating Tracked Turret + Cannon Barrel aiming directly at player!
-    ctx.save();
-    ctx.translate(0, 2);
-    ctx.rotate(c.turretAngle);
-
-    ctx.fillStyle = '#273324';
-    ctx.beginPath();
-    ctx.arc(0, 0, 16, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#1E293B';
-    ctx.fillRect(-4, -hl - 16, 8, 42);
-
-    // Muzzle charge flare before bomb launch
-    if (!c.wrecked && c.fireCooldown < 0.85) {
-      const charge = 0.5 + 0.5 * Math.sin(time * 28);
-      ctx.fillStyle = `rgba(249, 115, 22, ${0.5 + charge * 0.45})`;
-      ctx.beginPath();
-      ctx.arc(0, -hl - 17, 6 + charge * 3.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Amber tactical beacon on turret
-    if (!c.wrecked) {
-      const blink = Math.sin(time * 16 + c.id) > 0;
-      ctx.fillStyle = blink ? '#F59E0B' : '#78350F';
-      ctx.beginPath();
-      ctx.arc(0, 2, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    ctx.restore();
-    return;
-  }
 
   if (c.kind === 'army_car') {
     // Tactical Olive Armored 4x4 Gun Truck
@@ -1482,10 +1402,9 @@ function drawMissileAndTelegraph(
   const mx = toScreenX(m.worldY, m.laneX);
   const my = toScreenY(m.worldY);
 
-  if (m.source === 'chopper' || m.source === 'tank' || m.source === 'boat') {
+  if (m.source === 'chopper' || m.source === 'boat') {
     const tx = toScreenX(m.targetWorldY, m.targetLaneX);
     const ty = toScreenY(m.targetWorldY);
-    const progress = Math.max(0, Math.min(1, 1 - m.fuseTimer / m.maxFuse));
     const pulse = 0.65 + Math.sin(time * 26) * 0.35;
 
     // 1. Clean X Impact Spot Marker on Asphalt (no empty tracking circle!)
@@ -1494,9 +1413,7 @@ function drawMissileAndTelegraph(
     ctx.scale(scale, scale);
 
     const markerColor =
-      m.source === 'tank'
-        ? `rgba(249, 115, 22, ${0.65 + pulse * 0.35})`
-        : m.source === 'boat'
+      m.source === 'boat'
         ? `rgba(56, 189, 248, ${0.65 + pulse * 0.35})`
         : `rgba(239, 68, 68, ${0.65 + pulse * 0.35})`;
 
@@ -1509,61 +1426,11 @@ function drawMissileAndTelegraph(
     ctx.lineTo(-14, 14);
     ctx.stroke();
 
-    ctx.fillStyle = m.source === 'tank' ? '#FDBA74' : m.source === 'boat' ? '#BAE6FD' : '#FCA5A5';
+    ctx.fillStyle = m.source === 'boat' ? '#BAE6FD' : '#FCA5A5';
     ctx.font = '800 12px "Barlow Condensed", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(
-      m.source === 'tank' ? '! BOMB' : m.source === 'boat' ? '! SHELL' : '! MISSILE',
-      0,
-      -20
-    );
+    ctx.fillText(m.source === 'boat' ? '! SHELL' : '! MISSILE', 0, -20);
     ctx.restore();
-
-    if (m.source === 'tank') {
-      // Parabolic arcing Tank Bomb + ground shadow!
-      const arcZ = Math.sin(progress * Math.PI) * 95;
-      const bombScale = 1 + (arcZ / 120) * 0.48;
-
-      // Ground shadow under bomb
-      ctx.save();
-      ctx.translate(mx, my);
-      ctx.scale(scale, scale);
-      ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0.22, 0.55 - arcZ / 220)})`;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 11, 7, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Elevated spinning Tank Bomb
-      ctx.save();
-      ctx.translate(mx, my - arcZ * scale);
-      ctx.scale(scale * bombScale, scale * bombScale);
-      ctx.rotate(time * 12);
-
-      // Fiery fuse spark
-      ctx.fillStyle = '#FACC15';
-      ctx.beginPath();
-      ctx.arc(0, -13, 4.5 + Math.random() * 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Heavy dark iron bomb casing + danger band
-      ctx.fillStyle = '#1E293B';
-      ctx.beginPath();
-      ctx.arc(0, 0, 11, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#F97316';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(0, 0, 8, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Stabilizer fins
-      ctx.fillStyle = '#64748B';
-      ctx.fillRect(-13, -2, 26, 4);
-      ctx.fillRect(-2, -13, 4, 26);
-      ctx.restore();
-      return;
-    }
 
     // 2. Airborne Missile / Sea Shell heading toward impact marker
     const angle = Math.atan2(ty - my, tx - mx) + Math.PI * 0.5;

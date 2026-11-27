@@ -59,7 +59,7 @@ export interface TrafficCar {
   alpha: number;
 }
 
-export type CopKind = 'cruiser' | 'interceptor' | 'swat' | 'army_car' | 'army_tank';
+export type CopKind = 'cruiser' | 'interceptor' | 'swat' | 'army_car';
 
 export interface CopCar {
   id: number;
@@ -101,7 +101,7 @@ export interface SeaBoat {
 
 export interface Missile {
   id: number;
-  source: 'chopper' | 'army' | 'tank' | 'boat';
+  source: 'chopper' | 'army' | 'boat';
   startLaneX: number;
   startWorldY: number;
   laneX: number;
@@ -601,15 +601,13 @@ function computeLoadBalance(world: EngineWorld): LoadBalance {
   const maxCops =
     world.score.wantedLevel === 0
       ? 0
-      : difficulty < 0.28
+      : world.score.wantedLevel === 1
       ? 1
-      : difficulty < 0.54
+      : difficulty < 0.48 && world.score.wantedLevel < 3
       ? 2
-      : difficulty < 0.8
-      ? 3
-      : 4;
+      : 3;
   const copCooldown =
-    Math.max(1.9, 5.2 - difficulty * 3.0) + (healthFactor < 0.35 ? 1.4 : 0);
+    Math.max(2.6, 5.6 - difficulty * 2.8) + (healthFactor < 0.35 ? 1.4 : 0);
   const hazardBlockCount = difficulty >= 0.68 && healthFactor >= 0.48 ? 2 : 1;
   const hazardIntervalScale = 1.28 - difficulty * 0.44 + (healthFactor < 0.35 ? 0.35 : 0);
 
@@ -804,29 +802,65 @@ function spawnCop(world: EngineWorld): void {
   if (stars <= 0) return;
 
   const bal = computeLoadBalance(world);
-  const activeCops = world.cops.filter((c) => !c.wrecked).length;
-  if (activeCops >= bal.maxCops) return;
+  const activeCops = world.cops.filter((c) => !c.wrecked);
+  if (activeCops.length >= bal.maxCops) return;
 
   let kind: CopKind = 'cruiser';
-  if (stars >= 5 && world.rng() < 0.36) {
-    kind = 'army_tank';
-  } else if (stars >= 4 && world.rng() < 0.48) {
+  if (stars >= 4 && world.rng() < 0.38) {
     kind = 'army_car';
-  } else if (stars >= 3 && world.rng() < 0.38) {
+  } else if (stars >= 3 && world.rng() < 0.42) {
     kind = 'swat';
   } else if (stars >= 2 && world.rng() < 0.52) {
     kind = 'interceptor';
   }
 
-  const spawnBehind = kind === 'army_tank' ? world.rng() < 0.4 : world.rng() < 0.7;
-  const lane = Math.floor(world.rng() * 4);
+  const preferBehind = world.rng() < 0.58;
+  const candidateYOffsets = preferBehind
+    ? [-680, 1080, -820, 1280]
+    : [1080, -680, 1280, -820];
+  const shuffledLanes = [0, 1, 2, 3].sort(() => world.rng() - 0.5);
+
+  let chosenLaneX: number | null = null;
+  let chosenY: number | null = null;
+
+  for (const yOff of candidateYOffsets) {
+    const testY = world.player.worldY + yOff;
+    // Keep newly spawned cops far apart vertically from existing cops
+    const tooCloseToCopY = activeCops.some((c) => Math.abs(c.worldY - testY) < 320);
+    if (tooCloseToCopY) continue;
+
+    for (const lane of shuffledLanes) {
+      const testX = LANE_CENTERS[lane];
+      const blockedByTraffic = world.traffic.some(
+        (t) =>
+          !t.wrecked &&
+          Math.abs(t.laneX - testX) < 56 &&
+          Math.abs(t.worldY - testY) < 175
+      );
+      const blockedByHazard = world.hazards.some(
+        (h) =>
+          !h.triggered &&
+          Math.abs(h.laneX - testX) < 70 &&
+          Math.abs(h.worldY - testY) < 150
+      );
+      if (!blockedByTraffic && !blockedByHazard) {
+        chosenLaneX = testX;
+        chosenY = testY;
+        break;
+      }
+    }
+    if (chosenLaneX !== null) break;
+  }
+
+  // Wait for clear space rather than stacking on another car
+  if (chosenLaneX === null || chosenY === null) return;
+
+  const spawnBehind = chosenY < world.player.worldY;
   const hp =
-    kind === 'army_tank'
-      ? 210
-      : kind === 'army_car'
-      ? 150
+    kind === 'army_car'
+      ? 145
       : kind === 'swat'
-      ? 130
+      ? 125
       : kind === 'interceptor'
       ? 95
       : 78;
@@ -834,18 +868,18 @@ function spawnCop(world: EngineWorld): void {
   world.cops.push({
     id: world.nextEntityId++,
     kind,
-    laneX: LANE_CENTERS[lane],
-    worldY: spawnBehind ? world.player.worldY - 560 : world.player.worldY + 1020,
-    speed: spawnBehind ? world.player.speed + 170 : world.player.speed * 0.72,
+    laneX: chosenLaneX,
+    worldY: chosenY,
+    speed: spawnBehind ? world.player.speed + 155 : world.player.speed * 0.78,
     vx: 0,
-    width: kind === 'army_tank' ? 46 : kind === 'swat' || kind === 'army_car' ? 42 : 36,
-    length: kind === 'army_tank' ? 88 : kind === 'swat' || kind === 'army_car' ? 78 : 68,
+    width: kind === 'swat' || kind === 'army_car' ? 42 : 36,
+    length: kind === 'swat' || kind === 'army_car' ? 78 : 68,
     hp,
     maxHp: hp,
-    targetLaneX: world.player.laneX,
+    targetLaneX: chosenLaneX,
     aiPhase: world.rng() * Math.PI * 2,
     turretAngle: spawnBehind ? 0 : Math.PI,
-    fireCooldown: kind === 'army_tank' ? 2.4 + world.rng() * 1.1 : 2.2 + world.rng() * 1.6,
+    fireCooldown: 2.3 + world.rng() * 1.5,
     lockLaneX: null,
     lockWorldY: null,
     wrecked: false,
@@ -1358,6 +1392,27 @@ export function stepEngine(
       continue;
     }
 
+    // Prevent traffic cars from overlapping or ghosting invisibly through each other
+    if (t.kind !== 'ramp') {
+      for (let j = 0; j < world.traffic.length; j++) {
+        if (i === j) continue;
+        const other = world.traffic[j];
+        if (other.wrecked || other.kind === 'ramp') continue;
+        const tdx = Math.abs(t.laneX - other.laneX);
+        const minW = (t.width + other.width) * 0.52;
+        if (tdx < minW && other.worldY > t.worldY) {
+          const gapY = other.worldY - t.worldY;
+          const minL = (t.length + other.length) * 0.52;
+          if (gapY < minL + 42) {
+            t.speed = Math.min(t.speed, other.speed * 0.96);
+          }
+          if (gapY < minL) {
+            t.worldY = other.worldY - minL - 2;
+          }
+        }
+      }
+    }
+
     const dx = Math.abs(p.laneX - t.laneX);
     const dy = Math.abs(p.worldY - t.worldY);
     const hitW = (playerW + t.width) * 0.45;
@@ -1454,7 +1509,10 @@ export function stepEngine(
     }
   }
 
-  // Update Police, Army Vehicles & Takedowns
+  // Update Intelligent Police & Takedowns (spaced apart, obstacle-avoiding, real colliders)
+  const activeCopIds = world.cops.filter((cop) => !cop.wrecked).map((cop) => cop.id);
+  const FORMATION_Y_OFFSETS = [215, -175, 55];
+
   for (let i = world.cops.length - 1; i >= 0; i--) {
     const c = world.cops[i];
     c.hitFlash = Math.max(0, c.hitFlash - dt);
@@ -1472,7 +1530,7 @@ export function stepEngine(
     }
 
     const relY = c.worldY - p.worldY;
-    if (relY < -900 || relY > 1500) {
+    if (relY < -950 || relY > 1550) {
       world.cops.splice(i, 1);
       continue;
     }
@@ -1487,78 +1545,129 @@ export function stepEngine(
       continue;
     }
 
-    const isArmy = c.kind === 'army_car' || c.kind === 'army_tank';
-    const desiredOffsetY =
-      c.kind === 'army_tank'
-        ? 235
-        : c.kind === 'army_car'
-        ? 95
-        : c.kind === 'interceptor'
-        ? 55
-        : -10;
-    const targetSpeed =
-      relY < desiredOffsetY - 40
-        ? p.speed + (c.kind === 'interceptor' || c.kind === 'army_car' ? 220 : 175) * bal.copAggression
-        : relY > desiredOffsetY + 95
-        ? Math.max(200, p.speed - 140)
-        : p.speed + 18 * bal.copAggression;
+    const isArmy = c.kind === 'army_car';
+    const slotIdx = Math.max(0, activeCopIds.indexOf(c.id));
+    const desiredOffsetY = FORMATION_Y_OFFSETS[slotIdx % FORMATION_Y_OFFSETS.length];
 
-    c.speed += (targetSpeed - c.speed) * Math.min(1, dt * 3.8);
+    // Intelligent Lane & Obstacle Evaluation: avoid traffic, hazards, and fellow cops; flank or attack player cleanly
+    const anotherCopNearPlayerLane = world.cops.some(
+      (other) =>
+        other.id !== c.id &&
+        !other.wrecked &&
+        Math.abs(other.laneX - p.laneX) < 62 &&
+        Math.abs(other.worldY - p.worldY) < 230
+    );
+
+    let bestLaneX = c.laneX;
+    let bestCost = Infinity;
+    let blockedDirectlyAhead = false;
+    let aheadBlockerSpeed = c.speed;
+
+    for (const candidateX of LANE_CENTERS) {
+      let cost = 0;
+
+      // Avoid civilian traffic ahead/beside
+      for (const t of world.traffic) {
+        if (t.wrecked) continue;
+        if (Math.abs(t.laneX - candidateX) < (c.width + t.width) * 0.68) {
+          const dyT = t.worldY - c.worldY;
+          if (dyT > -75 && dyT < 290) {
+            cost += 1200 - Math.max(0, dyT) * 2.0;
+          }
+        }
+      }
+
+      // Avoid roadblocks & spike strips
+      for (const h of world.hazards) {
+        if (h.triggered) continue;
+        if (Math.abs(h.laneX - candidateX) < 76) {
+          const dyH = h.worldY - c.worldY;
+          if (dyH > -45 && dyH < 300) {
+            cost += 1450;
+          }
+        }
+      }
+
+      // Keep wide separation from other police cars so they stay far apart & don't overlap
+      for (const other of world.cops) {
+        if (other.id === c.id || other.wrecked) continue;
+        const dyCop = Math.abs(other.worldY - c.worldY);
+        const dxCop = Math.abs(other.laneX - candidateX);
+        if (dyCop < 290 && dxCop < 82) {
+          cost += 950;
+        }
+      }
+
+      // Attack / Flanking logic
+      const inAttackWindow = Math.abs(relY) < 280;
+      if (anotherCopNearPlayerLane && !inAttackWindow) {
+        cost += Math.abs(Math.abs(candidateX - p.laneX) - LANE_WIDTH) * 0.95;
+      } else {
+        cost += Math.abs(candidateX - p.laneX) * (inAttackWindow ? 1.25 : 0.85);
+      }
+
+      // Slight hysteresis to keep steering smooth
+      if (Math.abs(candidateX - c.laneX) < 32) {
+        cost -= 28;
+      }
+
+      if (cost < bestCost) {
+        bestCost = cost;
+        bestLaneX = candidateX;
+      }
+    }
+
+    // Check immediate forward blocker in current lane so cop slows cleanly while changing lanes
+    for (const t of world.traffic) {
+      if (t.wrecked || t.kind === 'ramp') continue;
+      const dyT = t.worldY - c.worldY;
+      if (Math.abs(t.laneX - c.laneX) < (c.width + t.width) * 0.54 && dyT > 0 && dyT < 165) {
+        blockedDirectlyAhead = true;
+        aheadBlockerSpeed = Math.min(aheadBlockerSpeed, t.speed);
+      }
+    }
+    for (const other of world.cops) {
+      if (other.id === c.id || other.wrecked) continue;
+      const dyCop = other.worldY - c.worldY;
+      if (Math.abs(other.laneX - c.laneX) < 58 && dyCop > 0 && dyCop < 210) {
+        blockedDirectlyAhead = true;
+        aheadBlockerSpeed = Math.min(aheadBlockerSpeed, other.speed - 45);
+      }
+    }
+
+    // When clear and aligned near the player, target player's exact X to attack/ram; otherwise steer along clear lane
+    const laneClearToAttack =
+      Math.abs(bestLaneX - p.laneX) < 55 && Math.abs(relY) < 230 && !blockedDirectlyAhead;
+    c.targetLaneX = laneClearToAttack ? p.laneX : bestLaneX;
+
+    let targetSpeed =
+      relY < desiredOffsetY - 45
+        ? p.speed + (c.kind === 'interceptor' || c.kind === 'army_car' ? 210 : 175) * bal.copAggression
+        : relY > desiredOffsetY + 95
+        ? Math.max(210, p.speed - 145)
+        : p.speed + 16 * bal.copAggression;
+
+    // Aggressive attack burst when behind player with open lane
+    if (laneClearToAttack && relY < -35 && relY > -220) {
+      targetSpeed = Math.max(targetSpeed, p.speed + 185 * bal.copAggression);
+    }
+
+    if (blockedDirectlyAhead) {
+      targetSpeed = Math.min(targetSpeed, Math.max(180, aheadBlockerSpeed - 30));
+    }
+
+    c.speed += (targetSpeed - c.speed) * Math.min(1, dt * 4.2);
     c.worldY += c.speed * dt;
 
-    const pursueStrength =
-      (c.kind === 'army_tank' ? 2.2 : c.kind === 'swat' || isArmy ? 3.8 : 3.0) * bal.copAggression;
-    const laneDiff = p.laneX - c.laneX;
+    const pursueStrength = (c.kind === 'swat' || isArmy ? 4.4 : 3.6) * bal.copAggression;
+    const laneDiff = c.targetLaneX - c.laneX;
     c.vx +=
-      (Math.max(-280, Math.min(280, laneDiff * 3.1)) - c.vx) *
+      (Math.max(-310, Math.min(310, laneDiff * 3.5)) - c.vx) *
       Math.min(1, dt * pursueStrength);
     c.laneX = Math.max(-ROAD_HALF_WIDTH + 22, Math.min(ROAD_HALF_WIDTH - 22, c.laneX + c.vx * dt));
 
-    // Tracked Tank Turret & Dodgeable Bomb Attack
-    if (c.kind === 'army_tank') {
-      const aimX = c.lockLaneX ?? p.laneX;
-      const aimY = c.lockWorldY ?? p.worldY;
-      const desiredAngle = Math.atan2(aimX - c.laneX, aimY - c.worldY);
-      const diff = Math.atan2(Math.sin(desiredAngle - c.turretAngle), Math.cos(desiredAngle - c.turretAngle));
-      c.turretAngle += diff * Math.min(1, dt * 7.5);
-
-      if (Math.abs(relY) < 680) {
-        c.fireCooldown -= dt;
-        if (c.fireCooldown <= 0.85 && c.lockLaneX === null) {
-          c.lockLaneX = Math.max(-ROAD_HALF_WIDTH + 30, Math.min(ROAD_HALF_WIDTH - 30, p.laneX));
-          c.lockWorldY = p.worldY + p.speed * 1.02;
-        }
-        if (c.fireCooldown <= 0) {
-          const targetX = c.lockLaneX ?? Math.max(-ROAD_HALF_WIDTH + 30, Math.min(ROAD_HALF_WIDTH - 30, p.laneX));
-          const targetY = c.lockWorldY ?? p.worldY + p.speed * 1.02;
-          c.lockLaneX = null;
-          c.lockWorldY = null;
-          c.fireCooldown = bal.healthFactor < 0.35 ? 4.4 : 3.2;
-
-          const fuse = 1.05;
-          world.missiles.push({
-            id: world.nextEntityId++,
-            source: 'tank',
-            startLaneX: c.laneX,
-            startWorldY: c.worldY,
-            laneX: c.laneX,
-            worldY: c.worldY,
-            targetLaneX: targetX,
-            targetWorldY: targetY,
-            speed: 0,
-            fuseTimer: fuse,
-            maxFuse: fuse,
-            exploded: false,
-          });
-          sound.playMissileLaunch();
-          spawnBurst(world, c.laneX, c.worldY, '#FDE68A', 10, 'flame', 0.9);
-          addPopup(world, targetX, p.worldY + 115, 'TANK BOMB! DODGE!', '#F97316');
-        }
-      } else {
-        c.lockLaneX = null;
-        c.lockWorldY = null;
-      }
-    } else if (c.kind === 'army_car' && world.score.wantedLevel >= 5 && Math.abs(relY) < 560) {
+    // Army Gun Truck Rockets (Stars >= 4)
+    if (c.kind === 'army_car' && world.score.wantedLevel >= 4 && Math.abs(relY) < 560) {
       c.fireCooldown -= dt;
       if (c.fireCooldown <= 0) {
         c.fireCooldown = bal.healthFactor < 0.35 ? 5.2 : 4.0;
@@ -1584,10 +1693,45 @@ export function stepEngine(
       }
     }
 
+    // Cop <-> Traffic real collider (cops cannot pass invisibly through traffic)
+    for (const t of world.traffic) {
+      if (t.wrecked || t.kind === 'ramp') continue;
+      const tdx = Math.abs(c.laneX - t.laneX);
+      const tdy = Math.abs(c.worldY - t.worldY);
+      const tHitW = (c.width + t.width) * 0.46;
+      const tHitL = (c.length + t.length) * 0.46;
+      if (tdx < tHitW && tdy < tHitL) {
+        const pushDir = c.laneX >= t.laneX ? 1 : -1;
+        c.laneX = Math.max(-ROAD_HALF_WIDTH + 22, Math.min(ROAD_HALF_WIDTH - 22, c.laneX + pushDir * 14));
+        c.vx = pushDir * 220;
+        c.speed = Math.max(180, t.speed * 0.85);
+        c.hp -= t.kind === 'truck' ? 56 : 26;
+        c.hitFlash = 0.16;
+
+        t.wrecked = true;
+        t.vx = -pushDir * 280;
+        t.vy = c.speed * 0.72;
+        t.spinVel = -pushDir * 8.5;
+        sound.playCrash(t.kind === 'truck');
+        spawnBurst(world, (c.laneX + t.laneX) * 0.5, (c.worldY + t.worldY) * 0.5, '#F8FAFC', 10, 'spark', 0.9);
+
+        if (c.hp <= 0) {
+          c.wrecked = true;
+          c.vx = pushDir * 320;
+          c.spinVel = pushDir * 8.5;
+          world.score.copsWrecked++;
+          const cash = awardHaul(world, 600, true);
+          sound.playCopWreck();
+          spawnBurst(world, c.laneX, c.worldY, '#FF5E7E', 16, 'debris', 1.15);
+          addPopup(world, c.laneX, c.worldY + 35, `TRAFFIC CRASH +$${cash}`, '#FFB347');
+          break;
+        }
+      }
+    }
+    if (c.wrecked) continue;
+
     const copLabel =
-      c.kind === 'army_tank'
-        ? 'Army Tank'
-        : c.kind === 'army_car'
+      c.kind === 'army_car'
         ? 'Army Gun Truck'
         : c.kind === 'swat'
         ? 'SWAT Van'
@@ -1629,10 +1773,10 @@ export function stepEngine(
         } else if (world.score.copsWrecked === 1) {
           triggerPraiseOnce(world, 'wreck1', 'Great Takedown!', 'great');
         }
-        const baseBounty = c.kind === 'army_tank' ? 3000 : c.kind === 'army_car' ? 1800 : 1000;
+        const baseBounty = c.kind === 'army_car' ? 1800 : 1000;
         const cash = awardHaul(world, baseBounty, true);
         world.hitstopTimer = 0.048;
-        world.shakeIntensity = isArmy ? 18 : 14;
+        world.shakeIntensity = isArmy ? 16 : 14;
         sound.playCopWreck();
         spawnBurst(world, c.laneX, c.worldY, '#FF5E7E', 20, 'debris', 1.3);
         spawnBurst(world, c.laneX, c.worldY, '#FDE68A', 16, 'spark', 1.4);
@@ -1640,11 +1784,7 @@ export function stepEngine(
           world,
           c.laneX,
           c.worldY + 40,
-          c.kind === 'army_tank'
-            ? `TANK WRECKED +$${cash}`
-            : c.kind === 'army_car'
-            ? `ARMY WRECKED +$${cash}`
-            : `TAKEDOWN +$${cash}`,
+          c.kind === 'army_car' ? `ARMY WRECKED +$${cash}` : `TAKEDOWN +$${cash}`,
           '#FFB347'
         );
         commitOffense(
@@ -1655,7 +1795,7 @@ export function stepEngine(
           false
         );
       } else if (!isBeast && p.invulnTimer <= 0) {
-        const dmg = c.kind === 'army_tank' ? 18 : c.kind === 'army_car' || c.kind === 'swat' ? 14 : 9;
+        const dmg = c.kind === 'army_car' || c.kind === 'swat' ? 14 : 9;
         p.health = Math.max(0, p.health - dmg);
         p.lastDamageBy = copLabel;
         p.hitFlash = 0.18;
@@ -1664,6 +1804,60 @@ export function stepEngine(
         world.shakeIntensity = 9;
         sound.playCrash(false);
         spawnBurst(world, (p.laneX + c.laneX) * 0.5, p.worldY, '#38BDF8', 10, 'spark', 0.9);
+      }
+    }
+  }
+
+  // Cop <-> Cop Collider: if two police cars collide or occupy the same spot, they crash & wreck!
+  for (let i = 0; i < world.cops.length; i++) {
+    const a = world.cops[i];
+    if (a.wrecked) continue;
+    for (let j = i + 1; j < world.cops.length; j++) {
+      const b = world.cops[j];
+      if (b.wrecked) continue;
+      const dx = Math.abs(a.laneX - b.laneX);
+      const dy = Math.abs(a.worldY - b.worldY);
+      const hitW = (a.width + b.width) * 0.48;
+      const hitL = (a.length + b.length) * 0.48;
+      if (dx < hitW && dy < hitL) {
+        const pushX = a.laneX >= b.laneX ? 1 : -1;
+        const pushY = a.worldY >= b.worldY ? 1 : -1;
+        const sepX = Math.max(10, (hitW - dx) * 0.65);
+        const sepY = Math.max(12, (hitL - dy) * 0.65);
+
+        if (dx > dy * 0.5) {
+          a.laneX = Math.max(-ROAD_HALF_WIDTH + 22, Math.min(ROAD_HALF_WIDTH - 22, a.laneX + pushX * sepX));
+          b.laneX = Math.max(-ROAD_HALF_WIDTH + 22, Math.min(ROAD_HALF_WIDTH - 22, b.laneX - pushX * sepX));
+        } else {
+          a.worldY += pushY * sepY;
+          b.worldY -= pushY * sepY;
+        }
+
+        a.vx = pushX * 290;
+        b.vx = -pushX * 290;
+        a.hp -= 52;
+        b.hp -= 52;
+        a.hitFlash = 0.2;
+        b.hitFlash = 0.2;
+
+        sound.playCrash(true);
+        spawnBurst(world, (a.laneX + b.laneX) * 0.5, (a.worldY + b.worldY) * 0.5, '#FACC15', 14, 'spark', 1.1);
+
+        for (const [cop, dir] of [
+          [a, pushX],
+          [b, -pushX],
+        ] as const) {
+          if (cop.hp <= 0 && !cop.wrecked) {
+            cop.wrecked = true;
+            cop.vx = dir * 340;
+            cop.spinVel = dir * 9;
+            world.score.copsWrecked++;
+            const cash = awardHaul(world, 650, true);
+            sound.playCopWreck();
+            spawnBurst(world, cop.laneX, cop.worldY, '#FF5E7E', 18, 'debris', 1.2);
+            addPopup(world, cop.laneX, cop.worldY + 35, `COP CRASH +$${cash}`, '#FFB347');
+          }
+        }
       }
     }
   }
@@ -1736,10 +1930,10 @@ export function stepEngine(
     }
   }
 
-  // Update Incoming Missiles, Tank Bombs, Boat Shells & Rockets
+  // Update Incoming Missiles, Boat Shells & Rockets
   for (let i = world.missiles.length - 1; i >= 0; i--) {
     const m = world.missiles[i];
-    if (m.source === 'chopper' || m.source === 'tank' || m.source === 'boat') {
+    if (m.source === 'chopper' || m.source === 'boat') {
       m.fuseTimer -= dt;
       const progress = Math.max(0, Math.min(1, 1 - m.fuseTimer / m.maxFuse));
       const startX = m.source === 'chopper' ? world.helicopter.laneX : m.startLaneX;
@@ -1754,8 +1948,8 @@ export function stepEngine(
           y: m.worldY,
           vx: (Math.random() - 0.5) * 30,
           vy: -50,
-          size: m.source === 'tank' ? 5 + Math.random() * 4 : 4 + Math.random() * 3,
-          color: m.source === 'tank' ? '#FACC15' : m.source === 'boat' ? '#38BDF8' : '#F97316',
+          size: 4 + Math.random() * 3,
+          color: m.source === 'boat' ? '#38BDF8' : '#F97316',
           life: 0.24,
           maxLife: 0.24,
           kind: 'smoke',
@@ -1765,46 +1959,35 @@ export function stepEngine(
       if (m.fuseTimer <= 0) {
         // Detonation!
         sound.playCrash(true);
-        world.shakeIntensity = Math.max(world.shakeIntensity, m.source === 'tank' ? 20 : 15);
+        world.shakeIntensity = Math.max(world.shakeIntensity, 15);
         spawnBurst(world, m.targetLaneX, m.targetWorldY, '#FFFFFF', 12, 'spark', 1.35);
-        spawnBurst(world, m.targetLaneX, m.targetWorldY, '#FF5A36', m.source === 'tank' ? 28 : 20, 'flame', 1.45);
+        spawnBurst(world, m.targetLaneX, m.targetWorldY, '#FF5A36', 20, 'flame', 1.45);
         spawnBurst(world, m.targetLaneX, m.targetWorldY, '#475569', 14, 'smoke', 1.0);
 
         const distToPlayer = Math.hypot(p.laneX - m.targetLaneX, p.worldY - m.targetWorldY);
-        const hitRadius = m.source === 'tank' ? 54 : 48;
+        const hitRadius = 48;
         if (distToPlayer < hitRadius && p.airZ <= 18 && isBeast) {
           spawnBurst(world, p.laneX, p.worldY, '#FACC15', 12, 'spark', 1.1);
           addPopup(world, p.laneX, p.worldY + 42, 'ARMOR BLOCKED!', '#FACC15');
         } else if (distToPlayer < hitRadius && p.airZ <= 18 && p.invulnTimer <= 0) {
-          const baseDmg = m.source === 'tank' ? 44 : 22;
+          const baseDmg = 22;
           const mDmg = bal.healthFactor < 0.35 ? Math.round(baseDmg * 0.72) : baseDmg;
           p.health = Math.max(0, p.health - mDmg);
-          p.lastDamageBy =
-            m.source === 'tank'
-              ? 'Army Tank Bomb'
-              : m.source === 'boat'
-              ? 'Sea Gunboat Shell'
-              : 'Helicopter Missile';
+          p.lastDamageBy = m.source === 'boat' ? 'Sea Gunboat Shell' : 'Helicopter Missile';
           p.hitFlash = 0.26;
           p.invulnTimer = 0.45;
-          world.hitstopTimer = m.source === 'tank' ? 0.055 : 0.04;
+          world.hitstopTimer = 0.04;
           addPopup(
             world,
             p.laneX,
             p.worldY + 42,
-            m.source === 'tank' ? 'BOMB HIT!' : m.source === 'boat' ? 'SHELL HIT!' : 'MISSILE HIT!',
+            m.source === 'boat' ? 'SHELL HIT!' : 'MISSILE HIT!',
             '#EF4444'
           );
         } else if (distToPlayer < 220) {
-          const dodgeCash = awardHaul(world, m.source === 'tank' ? 320 : 220, true);
+          const dodgeCash = awardHaul(world, 220, true);
           triggerPraiseOnce(world, 'bomb_dodge', 'Awesome Dodge! Pure Reflex!', 'awesome', true);
-          addPopup(
-            world,
-            p.laneX,
-            p.worldY + 42,
-            m.source === 'tank' ? `BOMB DODGED +$${dodgeCash}` : `DODGED +$${dodgeCash}`,
-            '#2DD4BF'
-          );
+          addPopup(world, p.laneX, p.worldY + 42, `DODGED +$${dodgeCash}`, '#2DD4BF');
         }
 
         // Collateral damage to nearby traffic

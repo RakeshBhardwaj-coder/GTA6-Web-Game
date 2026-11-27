@@ -29,7 +29,8 @@ export function renderWorld(
   const shakeX = world.shakeIntensity > 0.2 ? (Math.random() - 0.5) * world.shakeIntensity * 2 : 0;
   const shakeY = world.shakeIntensity > 0.2 ? (Math.random() - 0.5) * world.shakeIntensity * 2 : 0;
 
-  const playerScreenY = height * 0.74;
+  const isMobileLayout = width < 640 || height > width * 1.15;
+  const playerScreenY = isMobileLayout ? height * 0.56 : height * 0.70;
   const centerX = width * 0.5 + shakeX;
 
   const distMeters = Math.max(0, p.worldY / PX_PER_METER);
@@ -93,7 +94,7 @@ export function renderWorld(
 
     // Fair 1.1s top-edge lane telegraph before entering screen!
     if (sy < -10 && h.worldY > p.worldY && h.worldY < p.worldY + 1350) {
-      drawHazardTelegraph(ctx, sx, h.kind, scale, world.time);
+      drawHazardTelegraph(ctx, sx, h.kind, scale, world.time, isMobileLayout ? 112 : 78);
       continue;
     }
 
@@ -1002,12 +1003,13 @@ function drawHazardTelegraph(
   sx: number,
   kind: 'roadblock' | 'spikes',
   scale: number,
-  time: number
+  time: number,
+  topY = 78
 ): void {
   const pulse = 0.75 + Math.sin(time * 18) * 0.25;
   ctx.save();
   ctx.globalAlpha = pulse;
-  ctx.translate(sx, 78);
+  ctx.translate(sx, topY);
   ctx.scale(scale, scale);
   ctx.fillStyle = kind === 'spikes' ? '#F59E0B' : '#EF4444';
   roundRect(ctx, -38, -16, 76, 30, 6);

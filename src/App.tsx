@@ -36,7 +36,7 @@ import {
   RunSummary,
 } from './game/types';
 
-const CONTROL_MODE_STORAGE_KEY = 'leonida_control_mode_v1';
+const CONTROL_MODE_STORAGE_KEY = 'leonida_control_mode_v2';
 const SELECTED_CAR_STORAGE_KEY = 'leonida_selected_car_v1';
 
 function getInitialControlMode(): ControlMode {
@@ -46,7 +46,7 @@ function getInitialControlMode(): ControlMode {
   } catch {
     // ignore storage failures
   }
-  return 'SWIPE';
+  return 'BUTTONS';
 }
 
 function getInitialSelectedCar(challengeCar?: CarId): CarId {
@@ -281,7 +281,7 @@ export default function App() {
   const handleWatchBonusAd = useCallback(() => {
     requestRewardedAd(
       () => {
-        setBonusCoinsEarned((prev) => prev + 5000);
+        setBonusCoinsEarned((prev) => prev + 500);
         notifyHappytime();
       },
       () => {
@@ -304,6 +304,18 @@ export default function App() {
     soundRef.current?.startDrivingLoops();
     setGameState('PLAYING');
   }, [challenge?.seed, resetInputs, startNewRun]);
+
+  const handleEndBonusCoinsAdded = useCallback((amount: number) => {
+    if (worldRef.current) {
+      worldRef.current.score.haul += amount;
+    }
+    notifyHappytime();
+  }, []);
+
+  const handleCelebrate = useCallback((rank: 1 | 2 | 3) => {
+    soundRef.current?.playCelebrationFanfare(rank);
+    notifyHappytime();
+  }, []);
 
   const handleToggleMute = useCallback(() => {
     if (!soundRef.current) return;
@@ -713,6 +725,12 @@ export default function App() {
           leaderboardError={leaderboardError}
           onPlayAgain={() => startNewRun(challenge?.seed)}
           onRevive={handleRevive}
+          onBonusCoinsAdded={handleEndBonusCoinsAdded}
+          onCelebrate={handleCelebrate}
+          onOpenLeaderboard={() => {
+            setHighlightEntryId(null);
+            setShowLeaderboard(true);
+          }}
           onBackToTitle={handleQuitToTitle}
         />
       )}
@@ -724,6 +742,10 @@ export default function App() {
           errorMsg={leaderboardError}
           highlightEntryId={highlightEntryId}
           onClose={() => setShowLeaderboard(false)}
+          onMainMenu={() => {
+            setShowLeaderboard(false);
+            handleQuitToTitle();
+          }}
           onChallengeEntry={handleChallengeFromLeaderboard}
         />
       )}

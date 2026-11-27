@@ -8,11 +8,11 @@ import {
   Crown,
   Gauge,
   Flame,
-  Zap,
   Sparkles,
   Gift,
+  Award,
+  Hash,
 } from 'lucide-react';
-import { CARS } from '../game/cars';
 import { requestRewardedAd } from '../game/crazygames';
 import {
   DRIVER_NAME_MAX,
@@ -22,7 +22,6 @@ import {
   submitScoreToLeaderboard,
 } from '../game/leaderboard';
 import { RunSummary } from '../game/types';
-import { CarIllustration } from './CarIllustration';
 
 interface EndModalProps {
   summary: RunSummary;
@@ -31,8 +30,124 @@ interface EndModalProps {
   leaderboardError: string | null;
   onPlayAgain: () => void;
   onRevive: () => void;
+  onBonusCoinsAdded?: (amount: number) => void;
+  onCelebrate?: (rank: 1 | 2 | 3) => void;
+  onOpenLeaderboard: () => void;
   onBackToTitle: () => void;
 }
+
+const RIBBON_PALETTES: Record<1 | 2 | 3, string[]> = {
+  1: ['#FFB347', '#FDE047', '#FF5E7E', '#2DD4BF', '#38BDF8', '#A78BFA'],
+  2: ['#E2E8F0', '#38BDF8', '#2DD4BF', '#FF5E7E', '#C4B5FD', '#FDE047'],
+  3: ['#FB923C', '#FBBF24', '#FF5E7E', '#34D399', '#38BDF8', '#A78BFA'],
+};
+
+interface RibbonSpec {
+  id: number;
+  leftPct: number;
+  delaySec: number;
+  durationSec: number;
+  swayPx: number;
+  rotMid: number;
+  rotLate: number;
+  rotEnd: number;
+  variant: 'curl' | 'wave' | 'strip';
+  scale: number;
+}
+
+const RIBBON_SPECS: RibbonSpec[] = Array.from({ length: 22 }, (_, i) => {
+  const leftPct = 3 + (i * 93) / 21;
+  const variants: Array<'curl' | 'wave' | 'strip'> = ['curl', 'wave', 'strip'];
+  return {
+    id: i,
+    leftPct,
+    delaySec: (i % 7) * 0.38,
+    durationSec: 3.4 + (i % 5) * 0.48,
+    swayPx: (i % 2 === 0 ? 1 : -1) * (14 + (i % 4) * 6),
+    rotMid: (i % 2 === 0 ? 1 : -1) * (95 + (i % 3) * 35),
+    rotLate: (i % 2 === 0 ? 1 : -1) * (220 + (i % 4) * 30),
+    rotEnd: (i % 2 === 0 ? 1 : -1) * (360 + (i % 3) * 45),
+    variant: variants[i % variants.length],
+    scale: 0.82 + (i % 3) * 0.16,
+  };
+});
+
+const CelebrationRibbons: React.FC<{ rank: 1 | 2 | 3 }> = ({ rank }) => {
+  const palette = RIBBON_PALETTES[rank];
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-40 overflow-hidden"
+      aria-hidden="true"
+    >
+      {RIBBON_SPECS.map((r) => {
+        const color = palette[r.id % palette.length];
+        const accent = palette[(r.id + 2) % palette.length];
+        const style = {
+          left: `${r.leftPct}%`,
+          top: '-48px',
+          '--fall-delay': `${r.delaySec}s`,
+          '--fall-dur': `${r.durationSec}s`,
+          '--sway-x': `${r.swayPx}px`,
+          '--sway-end': `${-r.swayPx * 0.5}px`,
+          '--rot-mid': `${r.rotMid}deg`,
+          '--rot-late': `${r.rotLate}deg`,
+          '--rot-end': `${r.rotEnd}deg`,
+        } as React.CSSProperties;
+
+        return (
+          <div key={r.id} className="absolute animate-ribbon-fall" style={style}>
+            {r.variant === 'curl' ? (
+              <svg
+                width={Math.round(22 * r.scale)}
+                height={Math.round(44 * r.scale)}
+                viewBox="0 0 24 48"
+                fill="none"
+              >
+                <path
+                  d="M12 2C19 7 5 14 14 21C22 27 4 34 13 42C16 44.5 14 47 11 47"
+                  stroke={color}
+                  strokeWidth="4.2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M12 2C19 7 5 14 14 21C22 27 4 34 13 42"
+                  stroke={accent}
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeOpacity="0.65"
+                />
+              </svg>
+            ) : r.variant === 'wave' ? (
+              <svg
+                width={Math.round(20 * r.scale)}
+                height={Math.round(40 * r.scale)}
+                viewBox="0 0 20 40"
+                fill="none"
+              >
+                <path
+                  d="M4 2Q18 10 10 20T14 38"
+                  stroke={color}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ) : (
+              <div
+                className="rounded-sm shadow-sm"
+                style={{
+                  width: `${Math.round(9 * r.scale)}px`,
+                  height: `${Math.round(24 * r.scale)}px`,
+                  background: `linear-gradient(135deg, ${color}, ${accent})`,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const LOW_RUN_HEADLINES: Array<{
   headline: string;
@@ -40,24 +155,24 @@ const LOW_RUN_HEADLINES: Array<{
   textClass: string;
 }> = [
   {
-    headline: 'Awesome Effort!',
+    headline: 'Thanks for Driving! Awesome Effort!',
     color: '#2DD4BF',
-    textClass: 'font-display italic font-extrabold text-2xl tracking-wider',
+    textClass: 'font-display italic font-extrabold text-xl sm:text-2xl tracking-wide',
   },
   {
-    headline: 'Great Spirit!',
+    headline: 'Great Run! Keep Rolling!',
     color: '#34D399',
-    textClass: 'font-display font-extrabold text-2xl tracking-wide uppercase',
+    textClass: 'font-display font-extrabold text-xl sm:text-2xl tracking-wide',
   },
   {
-    headline: 'Wow, Bold Drive!',
+    headline: 'Bold Drive! Well Played!',
     color: '#FFB347',
-    textClass: 'font-display italic font-extrabold text-2xl tracking-wide',
+    textClass: 'font-display italic font-extrabold text-xl sm:text-2xl tracking-wide',
   },
   {
-    headline: 'Good Try! Keep Rolling!',
+    headline: 'Awesome Spirit! Play Again!',
     color: '#38BDF8',
-    textClass: 'font-sans font-extrabold text-xl tracking-tight',
+    textClass: 'font-display font-extrabold text-xl sm:text-2xl tracking-wide',
   },
 ];
 
@@ -69,30 +184,30 @@ function getRunPraise(summary: RunSummary): {
   const score = summary.haul;
   if (score >= 45000 || summary.peakStars >= 5) {
     return {
-      headline: 'Wow! Legendary Run!',
+      headline: 'Legendary Run! Thank You for Playing!',
       color: '#FFB347',
-      textClass: 'font-display italic font-extrabold text-2xl tracking-wider uppercase',
+      textClass: 'font-display italic font-extrabold text-xl sm:text-2xl tracking-wide',
     };
   }
-  if (score >= 22000 || summary.maxCombo >= 8) {
+  if (score >= 22000 || summary.copsWrecked >= 5) {
     return {
-      headline: 'Awesome! Pure Mastery!',
+      headline: 'Awesome Mastery! Great Driving!',
       color: '#FF5E7E',
-      textClass: 'font-display font-extrabold text-2xl tracking-wide',
+      textClass: 'font-display font-extrabold text-xl sm:text-2xl tracking-wide',
     };
   }
   if (score >= 10000 || summary.nearMisses >= 6) {
     return {
-      headline: 'Great Driving!',
+      headline: 'Great Driving! Thanks for Playing!',
       color: '#2DD4BF',
-      textClass: 'font-display italic font-bold text-2xl tracking-wide',
+      textClass: 'font-display italic font-bold text-xl sm:text-2xl tracking-wide',
     };
   }
   if (score >= 3000 || summary.distanceMeters >= 500) {
     return {
-      headline: 'Good Run!',
+      headline: 'Good Run! Well Played!',
       color: '#34D399',
-      textClass: 'font-display font-extrabold text-xl tracking-wide',
+      textClass: 'font-display font-extrabold text-xl sm:text-2xl tracking-wide',
     };
   }
   const idx =
@@ -101,41 +216,15 @@ function getRunPraise(summary: RunSummary): {
   return LOW_RUN_HEADLINES[idx];
 }
 
-function getMetricBadge(
-  kind: 'dist' | 'cops' | 'misses' | 'combo',
-  value: number
-): { label: string; badgeClass: string } {
-  if (kind === 'dist') {
-    if (value >= 3000) return { label: 'Unstoppable!', badgeClass: 'italic uppercase tracking-wider' };
-    if (value >= 1500) return { label: 'Awesome!', badgeClass: 'font-extrabold tracking-wide' };
-    if (value >= 800) return { label: 'Great!', badgeClass: 'italic font-bold' };
-    return { label: 'Good Start!', badgeClass: 'font-bold' };
-  }
-  if (kind === 'cops') {
-    if (value >= 6) return { label: 'Wow!', badgeClass: 'italic uppercase tracking-wider' };
-    if (value >= 3) return { label: 'Awesome!', badgeClass: 'font-extrabold tracking-wide' };
-    if (value >= 1) return { label: 'Great!', badgeClass: 'italic font-bold' };
-    return { label: 'Safe Cruise!', badgeClass: 'font-bold' };
-  }
-  if (kind === 'misses') {
-    if (value >= 12) return { label: 'Insane!', badgeClass: 'italic uppercase tracking-wider' };
-    if (value >= 6) return { label: 'Awesome!', badgeClass: 'font-extrabold tracking-wide' };
-    if (value >= 2) return { label: 'Great!', badgeClass: 'italic font-bold' };
-    return { label: 'Steady!', badgeClass: 'font-bold' };
-  }
-  if (value >= 8) return { label: 'On Fire!', badgeClass: 'italic uppercase tracking-wider' };
-  if (value >= 5) return { label: 'Awesome!', badgeClass: 'font-extrabold tracking-wide' };
-  if (value >= 3) return { label: 'Great!', badgeClass: 'italic font-bold' };
-  return { label: 'Warm-Up!', badgeClass: 'font-bold' };
-}
-
 export const EndModal: React.FC<EndModalProps> = ({
   summary,
   entries,
   leaderboardLoading,
-  leaderboardError,
   onPlayAgain,
   onRevive,
+  onBonusCoinsAdded,
+  onCelebrate,
+  onOpenLeaderboard,
   onBackToTitle,
 }) => {
   const [copiedShare, setCopiedShare] = useState(false);
@@ -143,17 +232,24 @@ export const EndModal: React.FC<EndModalProps> = ({
   const [savingScore, setSavingScore] = useState(false);
   const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [displayHaul, setDisplayHaul] = useState<number>(summary.haul > 0 ? 1 : 0);
-  const [reviving, setReviving] = useState(false);
   const [bonusCoins, setBonusCoins] = useState(0);
+  const effectiveHaul = summary.haul + bonusCoins;
+  const [displayHaul, setDisplayHaul] = useState<number>(effectiveHaul > 0 ? 1 : 0);
+  const [reviving, setReviving] = useState(false);
   const [watchingBonusAd, setWatchingBonusAd] = useState(false);
   const isMountedRef = useRef(true);
+  const celebratedRankRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  const effectiveSummary = useMemo<RunSummary>(
+    () => ({ ...summary, haul: effectiveHaul }),
+    [summary, effectiveHaul]
+  );
 
   const handleReviveClick = () => {
     if (reviving || watchingBonusAd) return;
@@ -180,10 +276,9 @@ export const EndModal: React.FC<EndModalProps> = ({
       () => {
         if (isMountedRef.current) {
           setWatchingBonusAd(false);
-          setBonusCoins((prev) => prev + 5000);
-          setDisplayHaul((prev) => prev + 5000);
-          summary.haul += 5000;
+          setBonusCoins((prev) => prev + 500);
         }
+        onBonusCoinsAdded?.(500);
       },
       () => {
         if (isMountedRef.current) {
@@ -193,9 +288,9 @@ export const EndModal: React.FC<EndModalProps> = ({
     );
   };
 
-  // Smooth score count-up from $1 to final haul
+  // Smooth score count-up
   useEffect(() => {
-    const target = summary.haul;
+    const target = effectiveHaul;
     if (target <= 1) {
       setDisplayHaul(target);
       return;
@@ -209,8 +304,8 @@ export const EndModal: React.FC<EndModalProps> = ({
       return;
     }
 
-    const startVal = 1;
-    const duration = 950;
+    const startVal = bonusCoins > 0 ? Math.max(1, target - 500) : 1;
+    const duration = bonusCoins > 0 ? 450 : 850;
     const startTime = performance.now();
     let rafId = 0;
 
@@ -226,56 +321,14 @@ export const EndModal: React.FC<EndModalProps> = ({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [summary.haul]);
+  }, [effectiveHaul, bonusCoins]);
 
-  const praise = useMemo(() => getRunPraise(summary), [summary]);
-
-  const achievements = useMemo(
-    () => [
-      {
-        id: 'dist',
-        icon: Gauge,
-        value: `${(summary.distanceMeters / 1000).toFixed(2)} km`,
-        label: 'Distance',
-        badge: getMetricBadge('dist', summary.distanceMeters),
-        accent: '#38BDF8',
-        delayMs: 180,
-      },
-      {
-        id: 'cops',
-        icon: Flame,
-        value: `${summary.copsWrecked}`,
-        label: summary.copsWrecked === 1 ? 'Cop Kill' : 'Cops Kills',
-        badge: getMetricBadge('cops', summary.copsWrecked),
-        accent: '#FF5E7E',
-        delayMs: 420,
-      },
-      {
-        id: 'misses',
-        icon: Sparkles,
-        value: `${summary.nearMisses}`,
-        label: summary.nearMisses === 1 ? 'Near Miss' : 'Near Misses',
-        badge: getMetricBadge('misses', summary.nearMisses),
-        accent: '#2DD4BF',
-        delayMs: 660,
-      },
-      {
-        id: 'combo',
-        icon: Zap,
-        value: `${summary.maxCombo}x`,
-        label: 'Max Combo',
-        badge: getMetricBadge('combo', summary.maxCombo),
-        accent: '#FFB347',
-        delayMs: 900,
-      },
-    ],
-    [summary]
-  );
+  const praise = useMemo(() => getRunPraise(effectiveSummary), [effectiveSummary]);
 
   const projectedRank = useMemo(() => {
-    const beaten = entries.filter((e) => e.haul > summary.haul).length;
+    const beaten = entries.filter((e) => e.haul > effectiveHaul).length;
     return beaten + 1;
-  }, [entries, summary.haul]);
+  }, [entries, effectiveHaul]);
 
   const savedDriverRank = useMemo(() => {
     if (!savedEntryId) return null;
@@ -287,7 +340,16 @@ export const EndModal: React.FC<EndModalProps> = ({
   }, [entries, savedEntryId, driverTag, projectedRank]);
 
   const displayRank = savedDriverRank ?? projectedRank;
-  const visibleBoard = entries;
+  const isPodiumWinner = displayRank >= 1 && displayRank <= 3;
+  const podiumRank = isPodiumWinner ? (displayRank as 1 | 2 | 3) : null;
+
+  useEffect(() => {
+    if (!leaderboardLoading && podiumRank && celebratedRankRef.current !== podiumRank) {
+      celebratedRankRef.current = podiumRank;
+      onCelebrate?.(podiumRank);
+    }
+  }, [leaderboardLoading, podiumRank, onCelebrate]);
+
   const normalizedInputKey = driverTag.trim().toLowerCase();
 
   const existingDriverBest = useMemo(() => {
@@ -305,7 +367,7 @@ export const EndModal: React.FC<EndModalProps> = ({
     setSavingScore(true);
     setSaveError(null);
     try {
-      const entryId = await submitScoreToLeaderboard(summary, resolvedName);
+      const entryId = await submitScoreToLeaderboard(effectiveSummary, resolvedName);
       setSavedEntryId(entryId);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save score.');
@@ -316,7 +378,7 @@ export const EndModal: React.FC<EndModalProps> = ({
 
   const handleShare = async () => {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const shareText = `I scored $${summary.haul.toLocaleString()} (Position #${displayRank}) in GTA6 Web Game by Rakesh Bhardwaj!`;
+    const shareText = `I scored $${effectiveHaul.toLocaleString()} (Position #${displayRank}) in GTA6 Web Game by Rakesh Bhardwaj!`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -338,78 +400,135 @@ export const EndModal: React.FC<EndModalProps> = ({
     }
   };
 
-  const car = CARS[summary.carId];
+  const podiumBannerConfig =
+    podiumRank === 1
+      ? {
+          title: '1st Place Champion!',
+          color: '#FFB347',
+          bgClass:
+            'bg-gradient-to-r from-[#FFB347]/22 via-[#FDE047]/16 to-[#FF5E7E]/20 border-[#FFB347]/55',
+        }
+      : podiumRank === 2
+      ? {
+          title: '2nd Place Podium!',
+          color: '#38BDF8',
+          bgClass:
+            'bg-gradient-to-r from-[#E2E8F0]/18 via-[#38BDF8]/18 to-[#2DD4BF]/18 border-[#38BDF8]/55',
+        }
+      : podiumRank === 3
+      ? {
+          title: '3rd Place Podium!',
+          color: '#FB923C',
+          bgClass:
+            'bg-gradient-to-r from-[#FB923C]/22 via-[#FBBF24]/16 to-[#FF5E7E]/18 border-[#FB923C]/55',
+        }
+      : null;
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col items-center bg-[#0B0D14]/86 p-4 overflow-y-auto touch-pan-y text-center animate-gameover-fade">
-      <div className="w-full max-w-lg rounded-xl bg-[#131826] border border-white/12 p-5 sm:p-6 shadow-2xl my-auto text-center">
-        {/* Animated Score Hero & Praise */}
-        <div className="flex flex-col items-center">
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-300">
-            <CarIllustration car={car} className="w-4 h-7" />
-            <span className="text-[#2DD4BF] font-semibold tabular-nums">
-              Position #{displayRank}
+    <div className="fixed inset-0 z-30 flex flex-col items-center bg-[#0B0D14]/86 p-3 sm:p-5 overflow-y-auto touch-pan-y text-center animate-gameover-fade">
+      {/* Colorful Celebration Ribbons for 1st - 3rd Podium Finish */}
+      {!leaderboardLoading && podiumRank && <CelebrationRibbons rank={podiumRank} />}
+
+      <div className="relative z-10 w-full max-w-md rounded-xl bg-[#131826] border border-white/12 p-4 sm:p-5 shadow-2xl my-auto text-center">
+        {/* 1. Top: Podium Crest (1st-3rd) & Gratitude Headline */}
+        {!leaderboardLoading && podiumBannerConfig && (
+          <div
+            className={`mb-2 mx-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-lg border animate-podium-pop ${podiumBannerConfig.bgClass}`}
+          >
+            <Award className="w-4 h-4 shrink-0" style={{ color: podiumBannerConfig.color }} />
+            <span
+              className="font-display font-extrabold text-sm sm:text-base tracking-wide uppercase"
+              style={{ color: podiumBannerConfig.color }}
+            >
+              {podiumBannerConfig.title}
             </span>
+          </div>
+        )}
+
+        <div
+          className={`animate-text-bounce ${praise.textClass}`}
+          style={{ color: praise.color }}
+        >
+          {praise.headline}
+        </div>
+
+        {/* 2. Score Rectangular Box */}
+        <div className="mt-2.5 rounded-lg bg-[#0B0D14]/85 border border-[#FFB347]/35 px-4 py-3 text-center">
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            Total Score
+          </div>
+          <div className="mt-0.5 font-display font-extrabold text-4xl sm:text-5xl leading-none text-[#FFB347] tabular-nums">
+            ${displayHaul.toLocaleString()}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2 text-xs font-medium">
+            <span className="text-[#FCA5A5]">{summary.killedBy}</span>
             {summary.isNewBest && (
               <>
-                <span aria-hidden="true">·</span>
+                <span className="text-slate-500" aria-hidden="true">·</span>
                 <span className="text-[#FFB347] font-semibold">New Best</span>
               </>
             )}
+            {bonusCoins > 0 && (
+              <>
+                <span className="text-slate-500" aria-hidden="true">·</span>
+                <span className="text-[#34D399] font-semibold tabular-nums">
+                  +${bonusCoins.toLocaleString()} Added
+                </span>
+              </>
+            )}
           </div>
-
-          <div
-            className={`mt-1.5 animate-text-bounce ${praise.textClass}`}
-            style={{ color: praise.color }}
-          >
-            {praise.headline}
-          </div>
-
-          <div className="mt-1 font-display font-extrabold text-5xl sm:text-6xl leading-none text-[#FFB347] tabular-nums">
-            ${displayHaul.toLocaleString()}
-          </div>
-
-          <p
-            className="mt-1.5 text-xs sm:text-sm font-semibold text-[#FCA5A5] animate-gratitude-fade"
-            style={{ animationDelay: '220ms' }}
-          >
-            {summary.killedBy}
-          </p>
         </div>
 
-        {/* Sequential Staggered Achievement Pop-In Strip */}
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {achievements.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.id}
-                className="rounded-lg bg-[#0B0D14]/75 border border-white/10 px-2.5 py-2 flex flex-col items-center justify-center text-center animate-achievement-pop"
-                style={{ animationDelay: `${item.delayMs}ms` }}
-              >
-                <div
-                  className={`flex items-center justify-center gap-1 text-[11px] ${item.badge.badgeClass}`}
-                  style={{ color: item.accent }}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span>{item.badge.label}</span>
-                </div>
-                <div className="mt-0.5 font-display font-extrabold text-xl leading-tight text-white tabular-nums">
-                  {item.value}
-                </div>
-                <div className="text-[11px] text-slate-400">{item.label}</div>
-              </div>
-            );
-          })}
+        {/* 3. Four Clean Stat Boxes (Position, Distance, Cop Kills, Misses — Combo removed) */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg bg-[#0B0D14]/75 border border-white/10 px-2.5 py-2 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-[#2DD4BF]">
+              <Hash className="w-3.5 h-3.5 shrink-0" />
+              <span>Position</span>
+            </div>
+            <div className="mt-0.5 font-display font-extrabold text-xl leading-tight text-white tabular-nums">
+              #{displayRank}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-[#0B0D14]/75 border border-white/10 px-2.5 py-2 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-[#38BDF8]">
+              <Gauge className="w-3.5 h-3.5 shrink-0" />
+              <span>Distance</span>
+            </div>
+            <div className="mt-0.5 font-display font-extrabold text-xl leading-tight text-white tabular-nums">
+              {summary.distanceMeters.toLocaleString()}m
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-[#0B0D14]/75 border border-white/10 px-2.5 py-2 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-[#FF5E7E]">
+              <Flame className="w-3.5 h-3.5 shrink-0" />
+              <span>Cop Kills</span>
+            </div>
+            <div className="mt-0.5 font-display font-extrabold text-xl leading-tight text-white tabular-nums">
+              {summary.copsWrecked}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-[#0B0D14]/75 border border-white/10 px-2.5 py-2 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-[#FFB347]">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>Misses</span>
+            </div>
+            <div className="mt-0.5 font-display font-extrabold text-xl leading-tight text-white tabular-nums">
+              {summary.nearMisses}
+            </div>
+          </div>
         </div>
 
-        {/* Save Name & Position to Public Leaderboard */}
-        <div className="mt-4 pt-4 border-t border-white/10">
+        {/* 4. Enter Player Name + Save Button Side-by-Side */}
+        <div className="mt-3 pt-3 border-t border-white/10">
           {savedEntryId ? (
             <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#10B981]/14 border border-[#10B981]/35 text-xs sm:text-sm font-semibold text-[#34D399]">
               <Check className="w-4 h-4 shrink-0" />
               <span>
-                {existingDriverBest && existingDriverBest.haul > summary.haul
+                {existingDriverBest && existingDriverBest.haul > effectiveHaul
                   ? `Saved! ${driverTag} holds Position #${displayRank} ($${existingDriverBest.haul.toLocaleString()})`
                   : `Saved! ${driverTag} · Position #${displayRank}`}
               </span>
@@ -417,10 +536,10 @@ export const EndModal: React.FC<EndModalProps> = ({
           ) : (
             <form
               onSubmit={handleSaveScore}
-              className="flex flex-wrap items-center justify-center gap-2"
+              className="flex items-center justify-center gap-2"
             >
               <label htmlFor="driver-tag-input" className="sr-only">
-                Driver Name
+                Player name
               </label>
               <input
                 id="driver-tag-input"
@@ -428,145 +547,92 @@ export const EndModal: React.FC<EndModalProps> = ({
                 value={driverTag}
                 maxLength={DRIVER_NAME_MAX}
                 onChange={(e) => setDriverTag(e.target.value)}
-                placeholder="Enter your name"
-                className="flex-1 min-w-[165px] max-w-xs px-3 py-2 rounded-lg bg-[#0B0D14] border border-white/15 focus:border-[#FFB347] focus:outline-none text-sm text-white text-center placeholder:text-slate-500"
+                placeholder="Player name"
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-[#0B0D14] border border-white/15 focus:border-[#FFB347] focus:outline-none text-sm text-white placeholder:text-slate-500"
               />
               <button
                 type="submit"
                 disabled={savingScore}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#FFB347] hover:bg-[#FFC266] disabled:opacity-60 text-[#0B0D14] font-bold text-sm transition-colors cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#FFB347] hover:bg-[#FFC266] disabled:opacity-60 text-[#0B0D14] font-bold text-sm transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Trophy className="w-4 h-4" />
-                <span>{savingScore ? 'Saving...' : `Save #${projectedRank}`}</span>
+                <span>{savingScore ? 'Saving...' : 'Save'}</span>
               </button>
             </form>
           )}
 
           {saveError && (
-            <p className="mt-2 text-xs text-[#FCA5A5]">{saveError}</p>
+            <p className="mt-1.5 text-xs text-[#FCA5A5]">{saveError}</p>
           )}
         </div>
 
-        {/* Built-in Unique Leaderboard (Position + Name + Score) */}
-        <div className="mt-4 rounded-xl bg-[#0B0D14]/70 border border-white/10 p-3 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-[#FFB347] mb-2">
-            <Crown className="w-3.5 h-3.5" />
-            <span>Leaderboard</span>
-          </div>
-
-          {leaderboardError ? (
-            <div className="py-4 text-xs text-[#FCA5A5]">{leaderboardError}</div>
-          ) : leaderboardLoading ? (
-            <div className="py-4 text-xs text-slate-400">Loading leaderboard...</div>
-          ) : visibleBoard.length === 0 ? (
-            <div className="py-4 text-xs text-slate-400">
-              No scores yet · Save your name to claim #1!
-            </div>
-          ) : (
-            <div className="max-h-[122px] overflow-y-auto touch-pan-y overscroll-contain divide-y divide-white/6">
-              {visibleBoard.map((entry, idx) => {
-                const pos = idx + 1;
-                const isSelf =
-                  savedEntryId === entry.id ||
-                  (normalizedInputKey.length > 0 &&
-                    entry.driverName.trim().toLowerCase() === normalizedInputKey);
-                const entryCar = CARS[entry.carId] ?? CARS.cheetah;
-                return (
-                  <div
-                    key={entry.id}
-                    className={`flex items-center justify-between gap-3 h-10 px-2.5 rounded-md text-center ${
-                      isSelf ? 'bg-[#FFB347]/15' : ''
-                    }`}
-                  >
-                    <span
-                      className={`font-mono-num text-xs font-bold w-8 shrink-0 text-center ${
-                        pos === 1
-                          ? 'text-[#FFB347]'
-                          : pos === 2
-                          ? 'text-slate-200'
-                          : pos === 3
-                          ? 'text-[#FB923C]'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      #{pos}
-                    </span>
-
-                    <div className="flex items-center justify-center gap-2 min-w-0 flex-1">
-                      <CarIllustration car={entryCar} className="w-3.5 h-6 shrink-0" />
-                      <span className="text-xs font-semibold text-white truncate">
-                        {entry.driverName}
-                      </span>
-                    </div>
-
-                    <span className="font-mono-num text-xs font-bold text-[#FFB347] shrink-0">
-                      ${entry.haul.toLocaleString()}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Action Bar: Revive, Get More Coins, Play Again, Share, Main Menu */}
-        <div className="mt-4 flex flex-col gap-2.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={reviving || watchingBonusAd}
-              onClick={handleReviveClick}
-              className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-[#38BDF8] hover:bg-[#7DD3FC] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-base tracking-wide transition-colors cursor-pointer shadow-lg"
-            >
-              <Gift className="w-5 h-5 shrink-0" />
-              <span>{reviving ? 'Loading Ad...' : 'Watch Ad to Revive 🎬'}</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={reviving || watchingBonusAd}
-              onClick={handleBonusCoinsClick}
-              className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-[#FBBF24] hover:bg-[#FDE047] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-base tracking-wide transition-colors cursor-pointer shadow-lg"
-            >
-              <Sparkles className="w-5 h-5 shrink-0 text-[#0B0D14]" />
-              <span>
-                {watchingBonusAd
-                  ? 'Loading Ad...'
-                  : bonusCoins > 0
-                  ? `+$${bonusCoins.toLocaleString()} Added! (+$5k)`
-                  : 'Watch Ad for +$5,000 Coins 💰'}
-              </span>
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
+        {/* 5. Below: 2 Boxes (Watch Ad +$500 & Revive) */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={onPlayAgain}
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] text-[#0B0D14] font-bold text-sm transition-colors cursor-pointer whitespace-nowrap"
+            disabled={reviving || watchingBonusAd}
+            onClick={handleBonusCoinsClick}
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2.5 rounded-lg bg-[#FBBF24] hover:bg-[#FDE047] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-sm sm:text-base tracking-wide transition-colors cursor-pointer shadow-md whitespace-nowrap"
           >
-            <RotateCcw className="w-4 h-4" />
-            <span>Play Again</span>
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span>
+              {watchingBonusAd
+                ? 'Loading Ad...'
+                : bonusCoins > 0
+                ? `+$${bonusCoins} Added (+$500)`
+                : 'Watch Ad +$500'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={reviving || watchingBonusAd}
+            onClick={handleReviveClick}
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2.5 rounded-lg bg-[#38BDF8] hover:bg-[#7DD3FC] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-sm sm:text-base tracking-wide transition-colors cursor-pointer shadow-md whitespace-nowrap"
+          >
+            <Gift className="w-4 h-4 shrink-0" />
+            <span>{reviving ? 'Loading Ad...' : 'Revive'}</span>
+          </button>
+        </div>
+
+        {/* 6. Below: Play Again Button */}
+        <button
+          type="button"
+          onClick={onPlayAgain}
+          className="mt-2.5 w-full flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] text-[#0B0D14] font-display font-extrabold text-lg tracking-wide transition-colors cursor-pointer shadow-md whitespace-nowrap"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span>Play Again</span>
+        </button>
+
+        {/* 7. Below: 3 Boxes (Leaderboard with icon, Share with icon, Main Menu with icon) */}
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={onOpenLeaderboard}
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg bg-[#0B0D14]/80 hover:bg-[#1B2236] border border-white/15 text-[#FFB347] font-semibold text-xs sm:text-sm transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <Crown className="w-4 h-4 shrink-0" />
+            <span>Leaderboard</span>
           </button>
 
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#2DD4BF] hover:bg-[#5EEAD4] text-[#0B0D14] font-bold text-sm transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg bg-[#2DD4BF]/18 hover:bg-[#2DD4BF]/28 border border-[#2DD4BF]/40 text-[#2DD4BF] font-semibold text-xs sm:text-sm transition-colors cursor-pointer whitespace-nowrap"
           >
-            {copiedShare ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+            {copiedShare ? <Check className="w-4 h-4 shrink-0" /> : <Share2 className="w-4 h-4 shrink-0" />}
             <span>{copiedShare ? 'Copied' : 'Share'}</span>
           </button>
 
           <button
             type="button"
             onClick={onBackToTitle}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-semibold text-sm transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg bg-white/8 hover:bg-white/14 border border-white/12 text-slate-200 font-semibold text-xs sm:text-sm transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Home className="w-4 h-4" />
+            <Home className="w-4 h-4 shrink-0" />
             <span>Main Menu</span>
           </button>
-        </div>
         </div>
 
         <p className="mt-3 text-[11px] text-slate-400">

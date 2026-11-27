@@ -120,15 +120,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 GTA6 WEB GAME
               </text>
             </svg>
-
-            <p className="mt-2 text-sm sm:text-base text-slate-200 max-w-lg mx-auto leading-relaxed">
-              Hit the coastal strip in a high-speed endless getaway chase created by Rakesh Bhardwaj! Dodge traffic, weave through tight gaps, smash pursuing cruisers, and launch off ramps as the heat intensifies.
-            </p>
           </div>
 
           {/* Incoming Friend Challenge Notice */}
           {challenge && (
-            <div className="w-full max-w-md mx-auto flex flex-col items-center gap-1.5 px-4 py-3 rounded-lg bg-[#161B2B]/90 border border-[#FFB347]/45 text-center">
+            <div className="w-full max-w-md mx-auto flex flex-col items-center gap-1 px-4 py-2.5 rounded-lg bg-[#161B2B]/90 border border-[#FFB347]/45 text-center">
               <p className="text-xs font-semibold text-[#FFB347]">
                 Rival Challenge
               </p>
@@ -149,10 +145,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
 
           {/* Simplest Color-Only Car Selection */}
           <div className="w-full max-w-md mx-auto">
-            <div className="text-xs font-semibold text-slate-300 tracking-wide mb-2.5 text-center">
+            <div className="text-xs font-semibold text-slate-300 tracking-wide mb-2 text-center">
               Select Ride
             </div>
-            <div className="grid grid-cols-3 gap-3 justify-items-center">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 justify-items-center">
               {CAR_LIST.map((car) => {
                 const active = selectedCar === car.id;
                 return (
@@ -162,7 +158,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                     aria-label={`Select ${car.name} colored car`}
                     aria-pressed={active}
                     onClick={() => onSelectCar(car.id)}
-                    className={`w-full flex flex-col items-center justify-center py-3.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer ${
+                    className={`w-full flex flex-col items-center justify-center py-2.5 sm:py-3.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer ${
                       active
                         ? 'bg-[#161B2B]/95 scale-[1.03]'
                         : 'bg-[#0F131F]/80 border-white/15 hover:border-white/35'
@@ -176,9 +172,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                         : undefined
                     }
                   >
-                    <CarIllustration car={car} className="w-11 h-20 sm:w-12 sm:h-22" />
+                    <CarIllustration car={car} className="w-9 h-16 sm:w-12 sm:h-20" />
                     <span
-                      className="mt-2 w-8 h-1.5 rounded-full transition-opacity"
+                      className="mt-1.5 sm:mt-2 w-7 sm:w-8 h-1.5 rounded-full transition-opacity"
                       style={{
                         backgroundColor: car.bodyColor,
                         opacity: active ? 1 : 0.45,
@@ -192,42 +188,42 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
 
           {/* Primary Start CTA + Leaderboard Trigger (Row 1) & Bonus Score Watch Ad (Row 2 below) */}
-          <div className="w-full flex flex-col items-center gap-2.5 pt-1">
-            <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="w-full flex flex-col items-center gap-2 pt-0.5">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={onStart}
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] active:translate-y-px text-[#0B0D14] font-display font-extrabold text-2xl tracking-wide transition-colors shadow-lg cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] active:translate-y-px text-[#0B0D14] font-display font-extrabold text-lg sm:text-2xl tracking-wide transition-colors shadow-lg cursor-pointer whitespace-nowrap"
               >
-                <Play className="w-5 h-5 fill-current" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
                 <span>Start Run</span>
               </button>
 
               <button
                 type="button"
                 onClick={onOpenLeaderboard}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-[#131826]/90 hover:bg-[#1B2236] border border-white/15 text-slate-100 font-display font-bold text-xl tracking-wide transition-colors cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-lg bg-[#131826]/90 hover:bg-[#1B2236] border border-white/15 text-slate-100 font-display font-bold text-base sm:text-xl tracking-wide transition-colors cursor-pointer whitespace-nowrap"
               >
-                <Trophy className="w-4 h-4 text-[#FFB347]" />
+                <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FFB347]" />
                 <span>Leaderboard</span>
               </button>
             </div>
 
-            {/* Bonus Score CTA below */}
+            {/* Compact Bonus Score Watch Ad CTA below */}
             <button
               type="button"
               onClick={onWatchBonusAd}
-              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-display font-bold text-lg tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shadow-lg ${
+              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-display font-bold text-sm sm:text-base tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shadow-lg ${
                 bonusCoinsEarned > 0
                   ? 'bg-[#10B981] hover:bg-[#34D399] text-[#0B0D14]'
                   : 'bg-[#38BDF8] hover:bg-[#7DD3FC] text-[#0B0D14]'
               }`}
             >
-              <Gift className="w-4 h-4" />
+              <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span>
                 {bonusCoinsEarned > 0
-                  ? `+$${bonusCoinsEarned.toLocaleString()} Bonus Active for Run! 🎁`
-                  : 'Watch Ad for +$5,000 Bonus Coins 🎁'}
+                  ? `+$${bonusCoinsEarned.toLocaleString()} Bonus Active!`
+                  : 'Watch Ad for +$500 Bonus'}
               </span>
             </button>
           </div>

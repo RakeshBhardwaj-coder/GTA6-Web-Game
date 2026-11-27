@@ -49,7 +49,7 @@ export const CAR_LIST: CarSpec[] = [CARS.cheetah, CARS.banshee, CARS.comet];
 
 export const DISTRICTS = [
   {
-    name: 'Ocean Beach Strip',
+    name: 'Sunset Beach Strip',
     startMeters: 0,
     endMeters: 1500,
   },
@@ -59,7 +59,7 @@ export const DISTRICTS = [
     endMeters: 3000,
   },
   {
-    name: 'Vice Expressway',
+    name: 'Neon Bay Expressway',
     startMeters: 3000,
     endMeters: 4500,
   },

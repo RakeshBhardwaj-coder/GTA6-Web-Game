@@ -84,6 +84,10 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             <span>Back to Title</span>
           </button>
         </div>
+
+        <p className="mt-4 text-[11px] text-slate-500">
+          Leonida Run · © 2026 Rakesh Bhardwaj
+        </p>
       </div>
     </div>
   );

@@ -1,7 +1,11 @@
 {
-  "name": "gtavi-leonida-run",
+  "name": "leonida-run-rakesh-bhardwaj",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Leonida Run — Original proprietary 2D arcade chase game by Rakesh Bhardwaj",
+  "author": "Rakesh Bhardwaj",
+  "license": "UNLICENSED",
+  "homepage": "https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

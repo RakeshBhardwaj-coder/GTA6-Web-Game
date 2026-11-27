@@ -79,9 +79,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           {/* Bespoke Centered SVG Title Lockup */}
           <div className="w-full flex flex-col items-center">
             <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide mb-2">
-              <span className="text-[#FFB347]">Most Wanted: Vice City Chase 🚗🔥</span>
+              <span className="text-[#FFB347]">An Original Game by Rakesh Bhardwaj 🚗🔥</span>
               <span className="px-2.5 py-0.5 rounded bg-[#10B981]/20 border border-[#10B981]/45 text-[#34D399] font-bold tabular-nums">
-                Score ${bestScore.toLocaleString()}
+                Best ${bestScore.toLocaleString()}
               </span>
             </div>
 
@@ -89,7 +89,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               viewBox="0 0 540 112"
               className="w-full max-w-[430px] h-auto mx-auto drop-shadow-[0_6px_24px_rgba(0,0,0,0.7)]"
               role="img"
-              aria-label="GTA6 Web Game"
+              aria-label="Leonida Run by Rakesh Bhardwaj"
             >
               <defs>
                 <linearGradient id="leonidaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -113,12 +113,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 fontSize="74"
                 letterSpacing="1"
               >
-                GTA6 WEB GAME
+                LEONIDA RUN
               </text>
             </svg>
 
             <p className="mt-2 text-sm sm:text-base text-slate-200 max-w-lg mx-auto leading-relaxed">
-              Hit the streets of Vice Beach in a high-speed endless driving challenge! Dodge traffic, weave through tight gaps, smash into pursuing police cruisers, and launch off ramps as the police chase gets more intense.
+              Hit the coastal strip in a high-speed endless getaway chase created by Rakesh Bhardwaj! Dodge traffic, weave through tight gaps, smash pursuing cruisers, and launch off ramps as the heat intensifies.
             </p>
           </div>
 
@@ -274,6 +274,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <span>https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/</span>
             <ExternalLink className="w-3 h-3 shrink-0" />
           </a>
+
+          <p className="text-[11px] font-medium text-slate-400 tracking-wide">
+            © 2026 Rakesh Bhardwaj · Proprietary Game · All Rights Reserved
+          </p>
         </div>
         </div>
       </div>

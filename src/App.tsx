@@ -68,7 +68,7 @@ function makeInitialHud(
     combo: 1,
     comboTimer: 0,
     districtIndex: 0,
-    districtName: 'Ocean Beach Strip',
+    districtName: 'Sunset Beach Strip',
     copsWrecked: 0,
     nearMisses: 0,
     maxCombo: 1,

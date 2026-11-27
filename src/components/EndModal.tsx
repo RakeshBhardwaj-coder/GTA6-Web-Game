@@ -264,11 +264,11 @@ export const EndModal: React.FC<EndModalProps> = ({
 
   const handleShare = async () => {
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const shareText = `I scored $${summary.haul.toLocaleString()} (Position #${displayRank}) in GTA6 Web Game!`;
+    const shareText = `I scored $${summary.haul.toLocaleString()} (Position #${displayRank}) in Leonida Run by Rakesh Bhardwaj!`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'GTA6 Web Game',
+          title: 'Leonida Run — by Rakesh Bhardwaj',
           text: shareText,
           url: baseUrl,
         });
@@ -486,6 +486,10 @@ export const EndModal: React.FC<EndModalProps> = ({
             <span>Main Menu</span>
           </button>
         </div>
+
+        <p className="mt-3 text-[11px] text-slate-400">
+          © 2026 Rakesh Bhardwaj · All Rights Reserved
+        </p>
       </div>
     </div>
   );

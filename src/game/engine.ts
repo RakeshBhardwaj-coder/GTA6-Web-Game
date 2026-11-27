@@ -2008,12 +2008,12 @@ export function stepEngine(
 
 function getCriminalTitle(world: EngineWorld): string {
   const haul = Math.round(world.score.haul);
-  if (haul >= 45000 && world.score.peakStars >= 5) return 'Vice City Kingpin';
+  if (haul >= 45000 && world.score.peakStars >= 5) return 'Leonida Kingpin';
   if (world.score.peakStars >= 5 && haul >= 20000) return 'Leonida Most Wanted';
   if (world.score.copsWrecked >= 5) return 'Interceptor Crusher';
   if (world.score.maxCombo >= 8) return 'Phantom Drifter';
   if (world.score.nearMisses >= 15) return 'Thread-the-Needle Ace';
-  if (haul >= 10000) return 'Ocean Drive Outlaw';
+  if (haul >= 10000) return 'Coastal Strip Outlaw';
   return 'Sunset Joyrider';
 }
 

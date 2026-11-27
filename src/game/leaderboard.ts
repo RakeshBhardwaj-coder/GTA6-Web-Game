@@ -39,7 +39,7 @@ export interface LeaderboardEntry {
 
 export function sanitizeDriverName(raw: string): string {
   const cleaned = raw.replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, DRIVER_NAME_MAX);
-  return cleaned.length >= DRIVER_NAME_MIN ? cleaned : 'Vice Driver';
+  return cleaned.length >= DRIVER_NAME_MIN ? cleaned : 'Street Driver';
 }
 
 export function getSavedDriverTag(fallbackDisplayName?: string | null): string {
@@ -54,7 +54,7 @@ export function getSavedDriverTag(fallbackDisplayName?: string | null): string {
   if (fallbackDisplayName) {
     return sanitizeDriverName(fallbackDisplayName);
   }
-  return 'Vice Driver';
+  return 'Street Driver';
 }
 
 export function saveDriverTagLocally(name: string): void {
@@ -143,7 +143,7 @@ export function subscribeLeaderboard(
         items.push({
           id: docSnap.id,
           uid: String(d.uid ?? ''),
-          driverName: String(d.driverName ?? 'Vice Driver'),
+          driverName: String(d.driverName ?? 'Street Driver'),
           haul: Number(d.haul ?? 0),
           distanceMeters: Number(d.distanceMeters ?? 0),
           copsWrecked: Number(d.copsWrecked ?? 0),

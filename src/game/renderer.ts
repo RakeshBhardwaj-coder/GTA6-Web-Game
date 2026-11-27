@@ -511,6 +511,44 @@ export function renderWorld(
     ctx.restore();
   }
 
+  // Active Revive Invulnerability Shield around Car
+  if (p.invulnTimer > 0 && p.armorTimer <= 0) {
+    const blink = p.invulnTimer < 1.5 ? 0.4 + 0.6 * Math.abs(Math.sin(world.time * 16)) : 1;
+    const pulse = Math.sin(world.time * 8) * 2;
+    const r = 44 + pulse;
+
+    ctx.save();
+    ctx.globalAlpha = blink;
+
+    const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, r);
+    grad.addColorStop(0, 'rgba(56, 189, 248, 0.05)');
+    grad.addColorStop(0.7, 'rgba(45, 212, 191, 0.2)');
+    grad.addColorStop(1, 'rgba(56, 189, 248, 0.55)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#38BDF8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Rotating cyan accent arcs
+    const rot = -world.time * 4.2;
+    ctx.strokeStyle = '#67E8F9';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 3, rot, rot + 1.2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 3, rot + Math.PI, rot + Math.PI + 1.2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   // Bust Meter Ring if cops pinning player
   if (p.bustMeter > 0.05) {
     ctx.strokeStyle = '#EF4444';

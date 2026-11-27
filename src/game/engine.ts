@@ -2349,6 +2349,69 @@ function stepBlastSequence(
   }
 }
 
+export function reviveEngineWorld(world: EngineWorld): void {
+  const spec = CARS[world.carId];
+  const p = world.player;
+
+  // 1. Unfreeze world step loop and clear blast explosion state
+  world.finished = false;
+  world.hitstopTimer = 0;
+  world.shakeIntensity = 0;
+  world.blast = {
+    active: false,
+    timer: 0,
+    duration: 0,
+    reason: 'WRECKED',
+    ringRadius: 0,
+    flashAlpha: 0,
+    fadeAlpha: 0,
+    pendingSummary: null,
+  };
+
+  // 2. Straighten car, restore 100% health, reset bust meter, and restore cruising speed
+  p.health = p.maxHealth;
+  p.bustMeter = 0;
+  p.heading = 0;
+  p.vx = 0;
+  p.airZ = 0;
+  p.airVelZ = 0;
+  p.drifting = false;
+  p.driftAngle = 0;
+  p.driftCharge = 0;
+  p.boosting = false;
+  p.hitFlash = 0;
+  // 4.5 seconds invulnerability grace period with shield
+  p.invulnTimer = 4.5;
+  p.speed = Math.max(340, spec.topSpeed * 0.52);
+  p.nitro = Math.max(p.nitro, p.maxNitro * 0.5);
+
+  // 3. Clear wanted level to 0 stars ("start the game with 0 stars and with same score car ened")
+  // Retains world.score.haul exactly as it was when the car ended!
+  world.score.wantedLevel = 0;
+  world.score.wantedPoints = 0;
+  world.rules.coolingDown = false;
+  world.rules.cleanTimer = 0;
+  world.rules.speedingTimer = 0;
+  world.rules.wrongLaneTimer = 0;
+  world.rules.offenseCooldown = 2.5;
+
+  // 4. Clear helicopter pursuit
+  world.helicopter.active = false;
+  world.helicopter.missileCooldown = 6.0;
+
+  // 5. Clear immediate lethal hazards and push cops away from player
+  world.missiles = [];
+  world.cops = world.cops.filter((c) => Math.abs(c.worldY - p.worldY) > 1200);
+  world.hazards = world.hazards.filter((h) => Math.abs(h.worldY - p.worldY) > 800);
+  world.traffic = world.traffic.filter(
+    (t) => Math.abs(t.worldY - p.worldY) > 220 || !t.wrecked
+  );
+
+  // 6. Smoothly center camera over road and player
+  const roadCx = getRoadCenterX(p.worldY, world.curve);
+  world.cameraWorldX = roadCx + p.laneX * 0.28;
+}
+
 export function getHudSnapshot(world: EngineWorld, muted: boolean): HudSnapshot {
   const spec = CARS[world.carId];
   const distanceMeters = Math.round(world.player.worldY / PX_PER_METER);

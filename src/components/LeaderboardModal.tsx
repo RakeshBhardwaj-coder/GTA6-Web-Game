@@ -47,7 +47,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             GTA6 Web Game
           </h2>
           <p className="mt-1.5 text-xs text-slate-400">
-            Unique Driver Records · Created by Rakesh Bhardwaj
+            Unique Driver Records · No Signup Needed
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                 >
                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#FFB347] tracking-wide">
                     <Crown className="w-4 h-4" />
-                    <span>#1 ROAD KINGPIN</span>
+                    <span>#1 VICE KINGPIN</span>
                   </div>
 
                   <div className="flex items-center justify-center gap-3">

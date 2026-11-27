@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   RotateCcw,
   Share2,
@@ -10,8 +10,10 @@ import {
   Flame,
   Zap,
   Sparkles,
+  Gift,
 } from 'lucide-react';
 import { CARS } from '../game/cars';
+import { requestRewardedAd } from '../game/crazygames';
 import {
   DRIVER_NAME_MAX,
   getSavedDriverTag,
@@ -28,6 +30,7 @@ interface EndModalProps {
   leaderboardLoading: boolean;
   leaderboardError: string | null;
   onPlayAgain: () => void;
+  onRevive: () => void;
   onBackToTitle: () => void;
 }
 
@@ -132,6 +135,7 @@ export const EndModal: React.FC<EndModalProps> = ({
   leaderboardLoading,
   leaderboardError,
   onPlayAgain,
+  onRevive,
   onBackToTitle,
 }) => {
   const [copiedShare, setCopiedShare] = useState(false);
@@ -140,6 +144,54 @@ export const EndModal: React.FC<EndModalProps> = ({
   const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [displayHaul, setDisplayHaul] = useState<number>(summary.haul > 0 ? 1 : 0);
+  const [reviving, setReviving] = useState(false);
+  const [bonusCoins, setBonusCoins] = useState(0);
+  const [watchingBonusAd, setWatchingBonusAd] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleReviveClick = () => {
+    if (reviving || watchingBonusAd) return;
+    setReviving(true);
+    void requestRewardedAd(
+      () => {
+        if (isMountedRef.current) {
+          setReviving(false);
+        }
+        onRevive();
+      },
+      () => {
+        if (isMountedRef.current) {
+          setReviving(false);
+        }
+      }
+    );
+  };
+
+  const handleBonusCoinsClick = () => {
+    if (watchingBonusAd || reviving) return;
+    setWatchingBonusAd(true);
+    void requestRewardedAd(
+      () => {
+        if (isMountedRef.current) {
+          setWatchingBonusAd(false);
+          setBonusCoins((prev) => prev + 5000);
+          setDisplayHaul((prev) => prev + 5000);
+          summary.haul += 5000;
+        }
+      },
+      () => {
+        if (isMountedRef.current) {
+          setWatchingBonusAd(false);
+        }
+      }
+    );
+  };
 
   // Smooth score count-up from $1 to final haul
   useEffect(() => {
@@ -457,8 +509,37 @@ export const EndModal: React.FC<EndModalProps> = ({
           )}
         </div>
 
-        {/* Action Bar: Play Again, Share, Main Menu Only */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+        {/* Action Bar: Revive, Get More Coins, Play Again, Share, Main Menu */}
+        <div className="mt-4 flex flex-col gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={reviving || watchingBonusAd}
+              onClick={handleReviveClick}
+              className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-[#38BDF8] hover:bg-[#7DD3FC] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-base tracking-wide transition-colors cursor-pointer shadow-lg"
+            >
+              <Gift className="w-5 h-5 shrink-0" />
+              <span>{reviving ? 'Loading Ad...' : 'Watch Ad to Revive 🎬'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={reviving || watchingBonusAd}
+              onClick={handleBonusCoinsClick}
+              className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-[#FBBF24] hover:bg-[#FDE047] disabled:opacity-60 text-[#0B0D14] font-display font-extrabold text-base tracking-wide transition-colors cursor-pointer shadow-lg"
+            >
+              <Sparkles className="w-5 h-5 shrink-0 text-[#0B0D14]" />
+              <span>
+                {watchingBonusAd
+                  ? 'Loading Ad...'
+                  : bonusCoins > 0
+                  ? `+$${bonusCoins.toLocaleString()} Added! (+$5k)`
+                  : 'Watch Ad for +$5,000 Coins 💰'}
+              </span>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
           <button
             type="button"
             onClick={onPlayAgain}
@@ -485,6 +566,7 @@ export const EndModal: React.FC<EndModalProps> = ({
             <Home className="w-4 h-4" />
             <span>Main Menu</span>
           </button>
+        </div>
         </div>
 
         <p className="mt-3 text-[11px] text-slate-400">

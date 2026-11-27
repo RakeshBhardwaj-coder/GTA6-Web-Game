@@ -75,6 +75,8 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             <span>{muted ? 'Unmute Audio' : 'Mute Audio'}</span>
           </button>
 
+
+
           <button
             type="button"
             onClick={onQuit}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Play, Trophy, Crown } from 'lucide-react';
+import { Volume2, VolumeX, Play, Trophy, Crown, Gift } from 'lucide-react';
 import { CAR_LIST } from '../game/cars';
 import { LeaderboardEntry } from '../game/leaderboard';
 import { CarId, ChallengeInfo } from '../game/types';
@@ -13,6 +13,8 @@ interface TitleScreenProps {
   onClearChallenge: () => void;
   onStart: () => void;
   onOpenLeaderboard: () => void;
+  onWatchBonusAd: () => void;
+  bonusCoinsEarned: number;
   topEntries: LeaderboardEntry[];
   leaderboardLoading: boolean;
   onChallengeEntry: (entry: LeaderboardEntry) => void;
@@ -30,6 +32,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onClearChallenge,
   onStart,
   onOpenLeaderboard,
+  onWatchBonusAd,
+  bonusCoinsEarned,
   topEntries,
   leaderboardLoading,
   onChallengeEntry,
@@ -187,24 +191,44 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             </div>
           </div>
 
-          {/* Primary Start CTA + Unique Leaderboard Trigger */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onStart}
-              className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] active:translate-y-px text-[#0B0D14] font-display font-extrabold text-2xl tracking-wide transition-colors shadow-lg cursor-pointer whitespace-nowrap"
-            >
-              <Play className="w-5 h-5 fill-current" />
-              <span>Start Run</span>
-            </button>
+          {/* Primary Start CTA + Leaderboard Trigger (Row 1) & Bonus Score Watch Ad (Row 2 below) */}
+          <div className="w-full flex flex-col items-center gap-2.5 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={onStart}
+                className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg bg-[#FF5E7E] hover:bg-[#FF7490] active:translate-y-px text-[#0B0D14] font-display font-extrabold text-2xl tracking-wide transition-colors shadow-lg cursor-pointer whitespace-nowrap"
+              >
+                <Play className="w-5 h-5 fill-current" />
+                <span>Start Run</span>
+              </button>
 
+              <button
+                type="button"
+                onClick={onOpenLeaderboard}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-[#131826]/90 hover:bg-[#1B2236] border border-white/15 text-slate-100 font-display font-bold text-xl tracking-wide transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Trophy className="w-4 h-4 text-[#FFB347]" />
+                <span>Leaderboard</span>
+              </button>
+            </div>
+
+            {/* Bonus Score CTA below */}
             <button
               type="button"
-              onClick={onOpenLeaderboard}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-[#131826]/90 hover:bg-[#1B2236] border border-white/15 text-slate-100 font-display font-bold text-xl tracking-wide transition-colors cursor-pointer whitespace-nowrap"
+              onClick={onWatchBonusAd}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-display font-bold text-lg tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shadow-lg ${
+                bonusCoinsEarned > 0
+                  ? 'bg-[#10B981] hover:bg-[#34D399] text-[#0B0D14]'
+                  : 'bg-[#38BDF8] hover:bg-[#7DD3FC] text-[#0B0D14]'
+              }`}
             >
-              <Trophy className="w-4 h-4 text-[#FFB347]" />
-              <span>Leaderboard</span>
+              <Gift className="w-4 h-4" />
+              <span>
+                {bonusCoinsEarned > 0
+                  ? `+$${bonusCoinsEarned.toLocaleString()} Bonus Active for Run! 🎁`
+                  : 'Watch Ad for +$5,000 Bonus Coins 🎁'}
+              </span>
             </button>
           </div>
 

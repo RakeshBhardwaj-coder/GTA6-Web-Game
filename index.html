@@ -17,8 +17,24 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Force local SDK mode for development / preview environments outside crazygames.com -->
+    <script>
+      try {
+        if (
+          typeof window !== 'undefined' &&
+          !window.location.hostname.includes('crazygames.com') &&
+          !window.location.search.includes('useLocalSdk=true')
+        ) {
+          var u = new URL(window.location.href);
+          u.searchParams.set('useLocalSdk', 'true');
+          window.history.replaceState(null, '', u.toString());
+        }
+      } catch (e) {
+        // ignore
+      }
+    </script>
     <!-- Load the SDK before your game code -->
-    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js" onerror="this.onerror=null;console.warn('CrazyGames SDK offline or blocked');"></script>
   </head>
   <body class="bg-[#0B0D14] text-slate-100 antialiased selection:bg-[#FF5E7E]/30">
     <div id="root"></div>

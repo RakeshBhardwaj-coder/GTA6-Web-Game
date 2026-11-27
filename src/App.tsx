@@ -12,6 +12,7 @@ import {
   notifyGameplayStart,
   notifyGameplayStop,
   notifyHappytime,
+  requestRewardedAd,
   setGameItem,
 } from './game/crazygames';
 import {
@@ -20,6 +21,7 @@ import {
   getBestScore,
   getHudSnapshot,
   InputState,
+  reviveEngineWorld,
   stepEngine,
 } from './game/engine';
 import { LeaderboardEntry, subscribeLeaderboard } from './game/leaderboard';
@@ -118,6 +120,7 @@ export default function App() {
   const [bestScore, setBestScore] = useState<number>(() => getBestScore('ENDLESS'));
   const [runSummary, setRunSummary] = useState<RunSummary | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [bonusCoinsEarned, setBonusCoinsEarned] = useState(0);
   const [highlightEntryId, setHighlightEntryId] = useState<string | null>(null);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
@@ -261,6 +264,9 @@ export default function App() {
         carId: selectedCar,
         targetScore,
       });
+      if (bonusCoinsEarned > 0) {
+        world.score.haul += bonusCoinsEarned;
+      }
       worldRef.current = world;
       wasBlastingRef.current = false;
       resetInputs();
@@ -269,8 +275,35 @@ export default function App() {
       soundRef.current?.startDrivingLoops();
       setGameState('PLAYING');
     },
-    [challenge, resetInputs, selectedCar]
+    [challenge, resetInputs, selectedCar, bonusCoinsEarned]
   );
+
+  const handleWatchBonusAd = useCallback(() => {
+    requestRewardedAd(
+      () => {
+        setBonusCoinsEarned((prev) => prev + 5000);
+        notifyHappytime();
+      },
+      () => {
+        // finished
+      }
+    );
+  }, []);
+
+  const handleRevive = useCallback(() => {
+    const world = worldRef.current;
+    if (!world) {
+      startNewRun(challenge?.seed);
+      return;
+    }
+    reviveEngineWorld(world);
+    wasBlastingRef.current = false;
+    resetInputs();
+    setRunSummary(null);
+    setHud(getHudSnapshot(world, soundRef.current?.isMuted() ?? false));
+    soundRef.current?.startDrivingLoops();
+    setGameState('PLAYING');
+  }, [challenge?.seed, resetInputs, startNewRun]);
 
   const handleToggleMute = useCallback(() => {
     if (!soundRef.current) return;
@@ -573,6 +606,7 @@ export default function App() {
               notifyHappytime();
             }
             setHud(getHudSnapshot(world, soundRef.current?.isMuted() ?? false));
+            soundRef.current?.stopDrivingLoops();
             setGameState('GAME_OVER');
           });
 
@@ -637,6 +671,8 @@ export default function App() {
             setHighlightEntryId(null);
             setShowLeaderboard(true);
           }}
+          onWatchBonusAd={handleWatchBonusAd}
+          bonusCoinsEarned={bonusCoinsEarned}
           topEntries={leaderboardEntries}
           leaderboardLoading={leaderboardLoading}
           onChallengeEntry={handleChallengeFromLeaderboard}
@@ -676,6 +712,7 @@ export default function App() {
           leaderboardLoading={leaderboardLoading}
           leaderboardError={leaderboardError}
           onPlayAgain={() => startNewRun(challenge?.seed)}
+          onRevive={handleRevive}
           onBackToTitle={handleQuitToTitle}
         />
       )}

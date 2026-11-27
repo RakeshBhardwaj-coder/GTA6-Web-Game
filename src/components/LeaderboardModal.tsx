@@ -44,7 +44,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             <Trophy className="w-5 h-5" />
           </div>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white leading-none">
-            Leonida Most Wanted
+            GTA6 Web Game
           </h2>
           <p className="mt-1.5 text-xs text-slate-400">
             Unique Driver Records · Created by Rakesh Bhardwaj

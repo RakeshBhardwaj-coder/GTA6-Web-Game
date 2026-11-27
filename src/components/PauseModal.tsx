@@ -86,7 +86,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
         </div>
 
         <p className="mt-4 text-[11px] text-slate-500">
-          Leonida Run · © 2026 Rakesh Bhardwaj
+          GTA6 Web Game · © 2026 Rakesh Bhardwaj
         </p>
       </div>
     </div>

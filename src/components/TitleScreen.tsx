@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Play, Trophy, Crown, ExternalLink, Globe } from 'lucide-react';
+import { Volume2, VolumeX, Play, Trophy, Crown } from 'lucide-react';
 import { CAR_LIST } from '../game/cars';
 import { LeaderboardEntry } from '../game/leaderboard';
 import { CarId, ChallengeInfo } from '../game/types';
@@ -79,7 +79,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           {/* Bespoke Centered SVG Title Lockup */}
           <div className="w-full flex flex-col items-center">
             <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide mb-2">
-              <span className="text-[#FFB347]">An Original Game by Rakesh Bhardwaj 🚗🔥</span>
+              <span className="text-[#FFB347]">A Game by Rakesh Bhardwaj</span>
               <span className="px-2.5 py-0.5 rounded bg-[#10B981]/20 border border-[#10B981]/45 text-[#34D399] font-bold tabular-nums">
                 Best ${bestScore.toLocaleString()}
               </span>
@@ -89,7 +89,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               viewBox="0 0 540 112"
               className="w-full max-w-[430px] h-auto mx-auto drop-shadow-[0_6px_24px_rgba(0,0,0,0.7)]"
               role="img"
-              aria-label="Leonida Run by Rakesh Bhardwaj"
+              aria-label="GTA6 Web Game by Rakesh Bhardwaj"
             >
               <defs>
                 <linearGradient id="leonidaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -113,7 +113,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 fontSize="74"
                 letterSpacing="1"
               >
-                LEONIDA RUN
+                GTA6 WEB GAME
               </text>
             </svg>
 
@@ -250,7 +250,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
         </div>
 
-        {/* Centered Control Signs Help & GitHub Pages Link */}
+        {/* Centered Control Signs Help */}
         <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-slate-300 text-center">
             <span>◀ ▶ / A D Left &amp; Right</span>
@@ -264,19 +264,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <span>Mobile: Buttons / Swipe</span>
           </div>
 
-          <a
-            href="https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#2DD4BF] hover:text-[#5EEAD4] underline underline-offset-4 transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5 shrink-0" />
-            <span>https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/</span>
-            <ExternalLink className="w-3 h-3 shrink-0" />
-          </a>
-
           <p className="text-[11px] font-medium text-slate-400 tracking-wide">
-            © 2026 Rakesh Bhardwaj · Proprietary Game · All Rights Reserved
+            © 2026 Rakesh Bhardwaj · All Rights Reserved
           </p>
         </div>
         </div>

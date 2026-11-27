@@ -1,6 +1,6 @@
-# Leonida Run — By Rakesh Bhardwaj
+# GTA6 Web Game — By Rakesh Bhardwaj
 
-An original proprietary 2D coastal getaway car racing & police chase game created by **Rakesh Bhardwaj**, built with **Vite**, **React**, **TypeScript**, **Tailwind CSS**, and a custom **HTML5 Canvas** 60fps simulation engine.
+A 2D coastal getaway car racing & police chase game created by **Rakesh Bhardwaj**, built with **Vite**, **React**, **TypeScript**, **Tailwind CSS**, and a custom **HTML5 Canvas** 60fps simulation engine.
 
 ## Features
 
@@ -38,7 +38,6 @@ Upload the contents inside the generated `dist/` folder as an HTML5 `.zip` packa
 - `R`: Quick Restart
 - `M`: Mute / Unmute Audio
 
-## Proprietary Ownership & License
+## Ownership & License
 
-Copyright © 2026 **Rakesh Bhardwaj**. All Rights Reserved.  
-See [LICENSE](./LICENSE) for full proprietary license terms.
+Copyright © 2026 **Rakesh Bhardwaj**. All Rights Reserved.

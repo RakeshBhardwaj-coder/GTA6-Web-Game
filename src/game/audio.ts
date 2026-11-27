@@ -1,3 +1,5 @@
+import { getGameItem, setGameItem } from './crazygames';
+
 const MUTE_KEY = 'leonida_run_muted_v1';
 
 export class SoundEngine {
@@ -15,11 +17,19 @@ export class SoundEngine {
   private loopsRunning: boolean = false;
 
   constructor() {
+    this.reloadMutedPreference();
+  }
+
+  public reloadMutedPreference(): boolean {
     try {
-      this.muted = localStorage.getItem(MUTE_KEY) === '1';
+      this.muted = getGameItem(MUTE_KEY) === '1';
     } catch {
       this.muted = false;
     }
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(this.muted ? 0 : 0.35, this.ctx.currentTime, 0.03);
+    }
+    return this.muted;
   }
 
   public isMuted(): boolean {
@@ -29,7 +39,7 @@ export class SoundEngine {
   public setMuted(next: boolean): void {
     this.muted = next;
     try {
-      localStorage.setItem(MUTE_KEY, next ? '1' : '0');
+      setGameItem(MUTE_KEY, next ? '1' : '0');
     } catch {
       // ignore storage failure
     }

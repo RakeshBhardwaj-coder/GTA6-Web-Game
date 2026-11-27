@@ -23,8 +23,7 @@ export function renderWorld(
   // Responsive scale: fit road cleanly on narrow mobile, expansive scenic view on desktop
   const minDim = Math.min(width, height);
   const baseScale = width < 640 ? width / 500 : Math.max(0.88, Math.min(1.22, minDim / 780));
-  const boostZoom = p.boosting ? 0.965 : 1.0;
-  const scale = baseScale * boostZoom;
+  const scale = baseScale;
 
   // Camera shake
   const shakeX = world.shakeIntensity > 0.2 ? (Math.random() - 0.5) * world.shakeIntensity * 2 : 0;

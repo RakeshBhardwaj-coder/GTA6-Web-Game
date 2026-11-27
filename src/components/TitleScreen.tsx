@@ -1,7 +1,6 @@
 import React from 'react';
 import { Volume2, VolumeX, Play, Trophy, Crown, ExternalLink, Globe } from 'lucide-react';
 import { CAR_LIST } from '../game/cars';
-import { getBestScore } from '../game/engine';
 import { LeaderboardEntry } from '../game/leaderboard';
 import { CarId, ChallengeInfo } from '../game/types';
 import { CarIllustration } from './CarIllustration';
@@ -9,6 +8,7 @@ import { CarIllustration } from './CarIllustration';
 interface TitleScreenProps {
   selectedCar: CarId;
   onSelectCar: (id: CarId) => void;
+  bestScore: number;
   challenge: ChallengeInfo | null;
   onClearChallenge: () => void;
   onStart: () => void;
@@ -25,6 +25,7 @@ const KEY_ART_URL = './src/assets/images/leonida_title_keyart_1795516402210.jpg'
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   selectedCar,
   onSelectCar,
+  bestScore,
   challenge,
   onClearChallenge,
   onStart,
@@ -35,7 +36,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   muted,
   onToggleMute,
 }) => {
-  const bestScore = getBestScore('ENDLESS');
   const topThree = topEntries.slice(0, 3);
 
   return (

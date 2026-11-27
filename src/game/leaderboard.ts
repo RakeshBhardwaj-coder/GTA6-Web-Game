@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { getGameItem, setGameItem } from './crazygames';
 import { CarId, GameMode, RunSummary } from './types';
 
 export const DRIVER_NAME_MIN = 2;
@@ -44,7 +45,7 @@ export function sanitizeDriverName(raw: string): string {
 
 export function getSavedDriverTag(fallbackDisplayName?: string | null): string {
   try {
-    const stored = localStorage.getItem(DRIVER_TAG_STORAGE_KEY);
+    const stored = getGameItem(DRIVER_TAG_STORAGE_KEY);
     if (stored && stored.trim().length >= DRIVER_NAME_MIN) {
       return sanitizeDriverName(stored);
     }
@@ -59,7 +60,7 @@ export function getSavedDriverTag(fallbackDisplayName?: string | null): string {
 
 export function saveDriverTagLocally(name: string): void {
   try {
-    localStorage.setItem(DRIVER_TAG_STORAGE_KEY, sanitizeDriverName(name));
+    setGameItem(DRIVER_TAG_STORAGE_KEY, sanitizeDriverName(name));
   } catch {
     // ignore storage errors
   }

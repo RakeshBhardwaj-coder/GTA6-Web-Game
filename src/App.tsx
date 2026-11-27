@@ -7,8 +7,17 @@ import { TitleScreen } from './components/TitleScreen';
 import { SoundEngine } from './game/audio';
 import { CARS } from './game/cars';
 import {
+  getGameItem,
+  initCrazyGamesSdk,
+  notifyGameplayStart,
+  notifyGameplayStop,
+  notifyHappytime,
+  setGameItem,
+} from './game/crazygames';
+import {
   createEngineWorld,
   EngineWorld,
+  getBestScore,
   getHudSnapshot,
   InputState,
   stepEngine,
@@ -26,15 +35,27 @@ import {
 } from './game/types';
 
 const CONTROL_MODE_STORAGE_KEY = 'leonida_control_mode_v1';
+const SELECTED_CAR_STORAGE_KEY = 'leonida_selected_car_v1';
 
 function getInitialControlMode(): ControlMode {
   try {
-    const saved = localStorage.getItem(CONTROL_MODE_STORAGE_KEY);
+    const saved = getGameItem(CONTROL_MODE_STORAGE_KEY);
     if (saved === 'SWIPE' || saved === 'BUTTONS') return saved;
   } catch {
     // ignore storage failures
   }
   return 'SWIPE';
+}
+
+function getInitialSelectedCar(challengeCar?: CarId): CarId {
+  if (challengeCar) return challengeCar;
+  try {
+    const saved = getGameItem(SELECTED_CAR_STORAGE_KEY);
+    if (saved === 'cheetah' || saved === 'banshee' || saved === 'comet') return saved;
+  } catch {
+    // ignore storage failures
+  }
+  return 'cheetah';
 }
 
 function detectTouchCapable(): boolean {
@@ -91,9 +112,10 @@ export default function App() {
   const [initialChallenge] = useState<ChallengeInfo | null>(() => parseChallengeFromUrl());
   const [challenge, setChallenge] = useState<ChallengeInfo | null>(initialChallenge);
   const [gameState, setGameState] = useState<GameState>('TITLE_MENU');
-  const [selectedCar, setSelectedCar] = useState<CarId>(
-    initialChallenge?.challengerCar ?? 'cheetah'
+  const [selectedCar, setSelectedCar] = useState<CarId>(() =>
+    getInitialSelectedCar(initialChallenge?.challengerCar)
   );
+  const [bestScore, setBestScore] = useState<number>(() => getBestScore('ENDLESS'));
   const [runSummary, setRunSummary] = useState<RunSummary | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [highlightEntryId, setHighlightEntryId] = useState<string | null>(null);
@@ -149,16 +171,46 @@ export default function App() {
 
   useEffect(() => {
     gameStateRef.current = gameState;
+    if (gameState === 'PLAYING') {
+      notifyGameplayStart();
+    } else {
+      notifyGameplayStop();
+    }
   }, [gameState]);
+
+  // Initialize CrazyGames SDK v3 and sync cloud-saved player progress/settings
+  useEffect(() => {
+    let active = true;
+    void initCrazyGamesSdk().then((ready) => {
+      if (!active || !ready) return;
+      setBestScore(getBestScore('ENDLESS'));
+      setControlMode(getInitialControlMode());
+      if (!initialChallenge?.challengerCar) {
+        setSelectedCar(getInitialSelectedCar());
+      }
+      if (soundRef.current) {
+        const nextMuted = soundRef.current.reloadMutedPreference();
+        setMuted(nextMuted);
+        setHud((prev) => ({ ...prev, muted: nextMuted }));
+      }
+      if (gameStateRef.current === 'PLAYING') {
+        notifyGameplayStart();
+      }
+    });
+    return () => {
+      active = false;
+      notifyGameplayStop();
+    };
+  }, [initialChallenge]);
 
   useEffect(() => {
     controlModeRef.current = controlMode;
-    try {
-      localStorage.setItem(CONTROL_MODE_STORAGE_KEY, controlMode);
-    } catch {
-      // ignore storage failure
-    }
+    setGameItem(CONTROL_MODE_STORAGE_KEY, controlMode);
   }, [controlMode]);
+
+  useEffect(() => {
+    setGameItem(SELECTED_CAR_STORAGE_KEY, selectedCar);
+  }, [selectedCar]);
 
   useEffect(() => {
     showLeaderboardRef.current = showLeaderboard;
@@ -516,6 +568,10 @@ export default function App() {
           stepEngine(world, rawDt, input, soundRef.current!, (summary) => {
             wasBlastingRef.current = false;
             setRunSummary(summary);
+            setBestScore(getBestScore('ENDLESS'));
+            if (summary.isNewBest && summary.haul >= 3000) {
+              notifyHappytime();
+            }
             setHud(getHudSnapshot(world, soundRef.current?.isMuted() ?? false));
             setGameState('GAME_OVER');
           });
@@ -570,6 +626,7 @@ export default function App() {
         <TitleScreen
           selectedCar={selectedCar}
           onSelectCar={setSelectedCar}
+          bestScore={bestScore}
           challenge={challenge}
           onClearChallenge={() => {
             setChallenge(null);

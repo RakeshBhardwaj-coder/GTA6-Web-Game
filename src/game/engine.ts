@@ -1,5 +1,6 @@
 import { SoundEngine } from './audio';
 import { CARS, DISTRICTS } from './cars';
+import { getGameItem, setGameItem } from './crazygames';
 import { createRng } from './prng';
 import {
   CarId,
@@ -299,7 +300,7 @@ const BEST_SCORE_PREFIX = 'leonida_best_v1_';
 
 export function getBestScore(mode: GameMode): number {
   try {
-    const val = localStorage.getItem(`${BEST_SCORE_PREFIX}${mode}`);
+    const val = getGameItem(`${BEST_SCORE_PREFIX}${mode}`);
     return val ? parseInt(val, 10) || 0 : 0;
   } catch {
     return 0;
@@ -310,7 +311,7 @@ function saveBestScore(mode: GameMode, score: number): boolean {
   try {
     const prev = getBestScore(mode);
     if (score > prev) {
-      localStorage.setItem(`${BEST_SCORE_PREFIX}${mode}`, String(Math.round(score)));
+      setGameItem(`${BEST_SCORE_PREFIX}${mode}`, String(Math.round(score)));
       return true;
     }
     return false;

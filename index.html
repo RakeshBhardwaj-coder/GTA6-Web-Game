@@ -19,10 +19,14 @@
     />
     <!-- Force local SDK mode for development / preview environments outside crazygames.com -->
     <script>
+      function isCrazyGames() {
+        const hostname = window.location.hostname;
+        return hostname === 'crazygames.com' || hostname.endsWith('.crazygames.com');
+      }
       try {
         if (
           typeof window !== 'undefined' &&
-          !window.location.hostname.includes('crazygames.com') &&
+          !isCrazyGames() &&
           !window.location.search.includes('useLocalSdk=true')
         ) {
           var u = new URL(window.location.href);

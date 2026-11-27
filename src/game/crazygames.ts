@@ -45,6 +45,21 @@ let sdkReady = false;
 let initPromise: Promise<boolean> | null = null;
 let gameplayActive = false;
 
+export function isCrazyGames(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return hostname === 'crazygames.com' || hostname.endsWith('.crazygames.com');
+}
+
+function isLocalSdkMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URLSearchParams(window.location.search).get('useLocalSdk') === 'true';
+  } catch {
+    return window.location.search.includes('useLocalSdk=true');
+  }
+}
+
 export function isCrazyGamesReady(): boolean {
   return sdkReady;
 }
@@ -69,6 +84,11 @@ export async function initCrazyGamesSdk(): Promise<boolean> {
 
   initPromise = (async () => {
     try {
+      if (!isCrazyGames() && !isLocalSdkMode()) {
+        sdkReady = false;
+        return false;
+      }
+
       const sdk = await waitForSdkObject(3500);
       if (!sdk || typeof sdk.init !== 'function') {
         initPromise = null;

@@ -66,14 +66,16 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         type="button"
         onClick={onToggleMute}
         aria-label={muted ? 'Unmute audio' : 'Mute audio'}
-        className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 flex items-center justify-center w-11 h-11 rounded-lg bg-[#0B0D14]/80 border border-white/15 text-slate-200 hover:text-white hover:border-white/30 transition-colors cursor-pointer"
+        className="absolute top-4 right-5 sm:top-5 sm:right-6 z-20 flex items-center justify-center w-11 h-11 rounded-lg bg-[#0B0D14]/80 border border-white/15 text-slate-200 hover:text-white hover:border-white/30 transition-colors cursor-pointer"
       >
         {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
       </button>
 
-      {/* Centered Content Container */}
-      <div className="relative z-10 h-full w-full max-w-2xl mx-auto px-5 sm:px-8 py-5 sm:py-7 flex flex-col items-center justify-between text-center overflow-y-auto">
-        <div className="w-full my-auto flex flex-col items-center space-y-5">
+      {/* Full-Width Scroll Wrapper (keeps scrollbar attached to far-right edge) */}
+      <div className="relative z-10 h-full w-full overflow-y-auto touch-pan-y">
+        {/* Centered Content Container */}
+        <div className="min-h-full w-full max-w-2xl mx-auto px-5 sm:px-8 py-5 sm:py-7 flex flex-col items-center justify-between text-center">
+          <div className="w-full my-auto flex flex-col items-center space-y-5">
           {/* Bespoke Centered SVG Title Lockup */}
           <div className="w-full flex flex-col items-center">
             <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wide mb-2">
@@ -272,6 +274,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <span>https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/</span>
             <ExternalLink className="w-3 h-3 shrink-0" />
           </a>
+        </div>
         </div>
       </div>
     </div>

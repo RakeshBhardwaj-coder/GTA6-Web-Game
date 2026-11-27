@@ -289,7 +289,7 @@ export const EndModal: React.FC<EndModalProps> = ({
   const car = CARS[summary.carId];
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0B0D14]/86 p-4 overflow-y-auto touch-pan-y text-center animate-gameover-fade">
+    <div className="fixed inset-0 z-30 flex flex-col items-center bg-[#0B0D14]/86 p-4 overflow-y-auto touch-pan-y text-center animate-gameover-fade">
       <div className="w-full max-w-lg rounded-xl bg-[#131826] border border-white/12 p-5 sm:p-6 shadow-2xl my-auto text-center">
         {/* Animated Score Hero & Praise */}
         <div className="flex flex-col items-center">

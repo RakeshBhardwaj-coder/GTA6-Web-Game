@@ -27,7 +27,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   const currentDriverKey = getSavedDriverTag().trim().toLowerCase();
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#0B0D14]/90 p-4 overflow-y-auto text-center">
+    <div className="fixed inset-0 z-40 flex flex-col items-center bg-[#0B0D14]/90 p-4 overflow-y-auto touch-pan-y text-center">
       <div className="w-full max-w-2xl rounded-xl bg-[#131826] border border-white/12 p-5 sm:p-6 shadow-2xl my-auto max-h-[90vh] flex flex-col text-center">
         {/* Centered Header */}
         <div className="relative flex flex-col items-center pb-4 border-b border-white/10">

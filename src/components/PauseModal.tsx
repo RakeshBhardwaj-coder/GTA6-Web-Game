@@ -24,8 +24,8 @@ export const PauseModal: React.FC<PauseModalProps> = ({
   onQuit,
 }) => {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0B0D14]/82 p-4 text-center">
-      <div className="w-full max-w-sm rounded-xl bg-[#131826] border border-white/12 p-6 shadow-2xl text-center">
+    <div className="fixed inset-0 z-30 flex flex-col items-center bg-[#0B0D14]/82 p-4 overflow-y-auto touch-pan-y text-center">
+      <div className="w-full max-w-sm rounded-xl bg-[#131826] border border-white/12 p-6 shadow-2xl my-auto text-center">
         <h2 className="font-display font-extrabold text-3xl text-white tracking-wide">
           Paused
         </h2>

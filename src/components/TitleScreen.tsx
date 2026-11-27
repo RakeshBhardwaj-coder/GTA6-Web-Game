@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, Play, Trophy, Crown } from 'lucide-react';
+import { Volume2, VolumeX, Play, Trophy, Crown, ExternalLink, Globe } from 'lucide-react';
 import { CAR_LIST } from '../game/cars';
 import { getBestScore } from '../game/engine';
 import { LeaderboardEntry } from '../game/leaderboard';
@@ -20,7 +20,7 @@ interface TitleScreenProps {
   onToggleMute: () => void;
 }
 
-const KEY_ART_URL = '/src/assets/images/leonida_title_keyart_1795516402210.jpg';
+const KEY_ART_URL = './src/assets/images/leonida_title_keyart_1795516402210.jpg';
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   selectedCar,
@@ -248,17 +248,30 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
         </div>
 
-        {/* Centered Control Signs Help */}
-        <div className="pt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-slate-300 text-center">
-          <span>◀ ▶ / A D Left &amp; Right</span>
-          <span aria-hidden="true">·</span>
-          <span>▲ Boost</span>
-          <span aria-hidden="true">·</span>
-          <span>⎵ Space Drift</span>
-          <span aria-hidden="true">·</span>
-          <span>⇧ Shift Nitro</span>
-          <span aria-hidden="true">·</span>
-          <span>Mobile: Buttons / Swipe</span>
+        {/* Centered Control Signs Help & GitHub Pages Link */}
+        <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-slate-300 text-center">
+            <span>◀ ▶ / A D Left &amp; Right</span>
+            <span aria-hidden="true">·</span>
+            <span>▲ Boost</span>
+            <span aria-hidden="true">·</span>
+            <span>⎵ Space Drift</span>
+            <span aria-hidden="true">·</span>
+            <span>⇧ Shift Nitro</span>
+            <span aria-hidden="true">·</span>
+            <span>Mobile: Buttons / Swipe</span>
+          </div>
+
+          <a
+            href="https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#2DD4BF] hover:text-[#5EEAD4] underline underline-offset-4 transition-colors"
+          >
+            <Globe className="w-3.5 h-3.5 shrink-0" />
+            <span>https://rakeshbhardwaj-coder.github.io/GTA6-Web-Game/</span>
+            <ExternalLink className="w-3 h-3 shrink-0" />
+          </a>
         </div>
       </div>
     </div>
